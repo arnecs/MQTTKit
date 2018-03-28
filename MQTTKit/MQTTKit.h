@@ -6,7 +6,7 @@
 //  Copyright © 2018 Arne Christian Skarpnes. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+@import Foundation;
 
 //! Project version number for MQTTKit.
 FOUNDATION_EXPORT double MQTTKitVersionNumber;

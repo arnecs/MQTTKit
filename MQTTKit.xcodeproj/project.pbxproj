@@ -10,6 +10,7 @@
 		10666253206BCC4C00A7BC4F /* MQTTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10666249206BCC4C00A7BC4F /* MQTTKit.framework */; };
 		10666258206BCC4C00A7BC4F /* MQTTKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10666257206BCC4C00A7BC4F /* MQTTKitTests.swift */; };
 		1066625A206BCC4C00A7BC4F /* MQTTKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 1066624C206BCC4C00A7BC4F /* MQTTKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		10666264206BCCB100A7BC4F /* MQTTKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10666263206BCCB100A7BC4F /* MQTTKit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +30,7 @@
 		10666252206BCC4C00A7BC4F /* MQTTKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MQTTKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		10666257206BCC4C00A7BC4F /* MQTTKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MQTTKitTests.swift; sourceTree = "<group>"; };
 		10666259206BCC4C00A7BC4F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		10666263206BCCB100A7BC4F /* MQTTKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MQTTKit.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				1066624C206BCC4C00A7BC4F /* MQTTKit.h */,
+				10666263206BCCB100A7BC4F /* MQTTKit.swift */,
 				1066624D206BCC4C00A7BC4F /* Info.plist */,
 			);
 			path = MQTTKit;
@@ -148,6 +151,7 @@
 				TargetAttributes = {
 					10666248206BCC4C00A7BC4F = {
 						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 0920;
 						ProvisioningStyle = Automatic;
 					};
 					10666251206BCC4C00A7BC4F = {
@@ -196,6 +200,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				10666264206BCCB100A7BC4F /* MQTTKit.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,10 +272,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks @executable_path/Frameworks\n@executable_path/Frameworks\n@executable_path/Frameworks @loader_path/../Frameworks @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos watchos appletvsimulator iphonesimulator watchsimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -321,9 +328,11 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/Frameworks @executable_path/Frameworks\n@executable_path/Frameworks\n@executable_path/Frameworks @loader_path/../Frameworks @executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos appletvos watchos appletvsimulator iphonesimulator watchsimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -333,6 +342,7 @@
 		1066625E206BCC4C00A7BC4F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -344,10 +354,11 @@
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = MQTTKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.acs.MQTTKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -355,6 +366,7 @@
 		1066625F206BCC4C00A7BC4F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -366,7 +378,7 @@
 				FRAMEWORK_VERSION = A;
 				INFOPLIST_FILE = MQTTKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.acs.MQTTKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
@@ -377,6 +389,7 @@
 		10666261206BCC4C00A7BC4F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = Y4XK8CPCV2;
@@ -391,6 +404,7 @@
 		10666262206BCC4C00A7BC4F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = Y4XK8CPCV2;
