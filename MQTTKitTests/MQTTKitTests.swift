@@ -11,9 +11,128 @@ import XCTest
 
 
 let timeout: TimeInterval = 5
+let host = "localhost"
 let topicToSub = "/a/topic"
 let messagePayload = "Some interesting content".data(using: .utf8)!
+let willTopic = "/will"
+let willMessage = "disconnected"
 
+class MQTTConnectedTests: XCTestCase {
+    
+    var mqtt: MQTTClient?
+    
+    override func setUp() {
+        let connected = expectation(description: "Setup Connected")
+        
+        mqtt = MQTTClient(host: "localhost")
+        
+        mqtt?.connect() {_ in
+            connected.fulfill()
+        }
+        
+        wait(for: [connected], timeout: timeout)
+        
+    }
+    
+    override func tearDown() {
+        
+    
+        guard let mqtt = mqtt, mqtt.state != .disconnected else {
+            self.mqtt = nil
+            return
+        }
+        
+        let disconnected = expectation(description: "Tear Down Disconnected")
+        
+        mqtt.didDisconnect = {_,_ in
+            disconnected.fulfill()
+        }
+        
+        mqtt.disconnect()
+        wait(for: [disconnected], timeout: timeout)
+        self.mqtt = nil
+    }
+    
+    func testAutoReconnect () {
+        
+        guard let mqtt = mqtt else {
+            XCTFail("MQTTClient nil")
+            return
+        }
+        
+        let reconnect = expectation(description: "Auto Reconnect")
+
+        mqtt.didConnect = {m, connected in
+            XCTAssert(connected)
+            reconnect.fulfill()
+        }
+        
+        // Close network connection internally
+        mqtt.closeStreams()
+        
+        wait(for: [reconnect], timeout: TimeInterval(20))
+        
+    }
+
+    func testDeinit() {
+        
+        
+        let disconnect = expectation(description: "Disconnect")
+        weak var mqttRef = mqtt
+
+        mqtt?.didDisconnect = {_, _ in
+            disconnect.fulfill()
+        }
+        
+        mqtt = nil
+        
+        wait(for: [disconnect], timeout: 3600)
+
+        XCTAssertNil(mqttRef)
+        
+    }
+    
+    
+    func testWill() {
+        let connected = expectation(description: "Connected")
+        let subscribed = expectation(description: "Subscribed")
+        let recievedWill = expectation(description: "Recieved Will")
+        
+        mqtt?.didSubscribe = {_,topic in
+            XCTAssertEqual(willTopic, topic)
+            subscribed.fulfill()
+        }
+
+        
+        mqtt?.subscribe(to: willTopic)
+    
+        var options = MQTTOptions(host: host)
+        options.will = MQTTWill(qos: .QoS0, retained: false, topic: willTopic, message: willMessage)
+        options.autoReconnect = false
+        var unstableMqtt = MQTTClient(options: options)
+        
+        
+        unstableMqtt.connect { _ in
+            connected.fulfill()
+        }
+        
+        wait(for: [connected, subscribed], timeout: timeout)
+        
+        mqtt?.didRecieveMessage = {_, msg in
+            XCTAssertEqual(msg.topic, willTopic)
+            XCTAssertEqual(msg.string, willMessage)
+            
+            recievedWill.fulfill()
+        }
+        
+        unstableMqtt.closeStreams()
+        
+        wait(for: [recievedWill], timeout: TimeInterval(20))
+        
+        
+    }
+
+}
 
 class MQTTKitTests: XCTestCase {
     
@@ -107,59 +226,6 @@ class MQTTKitTests: XCTestCase {
         wait(for: [disExp], timeout: timeout)
     }
     
-    
-    func testAutoReconnect () {
-        
-        let initalConnect = expectation(description: "Connected")
-        let reconnect = expectation(description: "Auto Reconnect")
-        let disconnect = expectation(description: "auto Disconnect")
-
-        mqtt.connect() {connected in
-            XCTAssert(connected)
-            initalConnect.fulfill()
-        }
-        
-        self.wait(for: [initalConnect], timeout: TimeInterval(20))
-        
-        mqtt.didDisconnect = {_,_ in
-            disconnect.fulfill()
-        }
-        
-        mqtt.didConnect = {m, connected in
-            XCTAssert(connected)
-            reconnect.fulfill()
-            
-            m.disconnect()
-        }
-        
-        // Close network connection internally
-        self.mqtt.closeStreams()
-        
-        wait(for: [reconnect, disconnect], timeout: TimeInterval(20))
-        
-    }
-    
-    
-    
-    func testMemoryLeak() {
-        let exp = expectation(description: "Wait forever")
-        let exp2 = expectation(description: "IDK")
-        
-        mqtt.connect() {_ in
-            
-            
-            exp.fulfill()
-        }
-        
-        
-        wait(for: [exp], timeout: 3600)
-        
-        print("nil")
-        mqtt = nil
-        
-        wait(for: [exp2], timeout: 3600)
-        
-    }
     
     func testTopicMatch() {
         XCTAssertTrue(MQTTClient.match(filter: "/a/b/c", with: "/a/b/c"))
