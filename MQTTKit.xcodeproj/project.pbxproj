@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		10457ADE206C3B28000C9BB0 /* MQTTPacket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10457ADD206C3B28000C9BB0 /* MQTTPacket.swift */; };
+		10457AE0206C3C6A000C9BB0 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10457ADF206C3C6A000C9BB0 /* Extensions.swift */; };
+		10457AE2206C3DBA000C9BB0 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10457AE1206C3DBA000C9BB0 /* Constants.swift */; };
 		10666253206BCC4C00A7BC4F /* MQTTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10666249206BCC4C00A7BC4F /* MQTTKit.framework */; };
 		10666258206BCC4C00A7BC4F /* MQTTKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10666257206BCC4C00A7BC4F /* MQTTKitTests.swift */; };
 		1066625A206BCC4C00A7BC4F /* MQTTKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 1066624C206BCC4C00A7BC4F /* MQTTKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -24,6 +27,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		10457ADD206C3B28000C9BB0 /* MQTTPacket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MQTTPacket.swift; sourceTree = "<group>"; };
+		10457ADF206C3C6A000C9BB0 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		10457AE1206C3DBA000C9BB0 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		10666249206BCC4C00A7BC4F /* MQTTKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MQTTKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		1066624C206BCC4C00A7BC4F /* MQTTKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MQTTKit.h; sourceTree = "<group>"; };
 		1066624D206BCC4C00A7BC4F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -75,6 +81,9 @@
 			children = (
 				1066624C206BCC4C00A7BC4F /* MQTTKit.h */,
 				10666263206BCCB100A7BC4F /* MQTTKit.swift */,
+				10457AE1206C3DBA000C9BB0 /* Constants.swift */,
+				10457ADF206C3C6A000C9BB0 /* Extensions.swift */,
+				10457ADD206C3B28000C9BB0 /* MQTTPacket.swift */,
 				1066624D206BCC4C00A7BC4F /* Info.plist */,
 			);
 			path = MQTTKit;
@@ -201,6 +210,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				10666264206BCCB100A7BC4F /* MQTTKit.swift in Sources */,
+				10457AE0206C3C6A000C9BB0 /* Extensions.swift in Sources */,
+				10457ADE206C3B28000C9BB0 /* MQTTPacket.swift in Sources */,
+				10457AE2206C3DBA000C9BB0 /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,41 +5,6 @@
 import Foundation
 import Dispatch
 
-fileprivate struct MQTTProtocol {
-    static let Level: UInt8 = 4
-    static let Name = "MQTT"
-}
-
-enum MQTTConnackResponse : UInt8 {
-    case accepted =                     0x00
-    case unacceptableProtocolVersion =  0x01
-    case identifierRejected =           0x02
-    case serverUnavailable =            0x03
-    case badUsernameOrPassword =        0x04
-    case notAuthorized =                0x05
-    case reserved =                     0x06
-}
-
-enum MQTTConnectionState {
-    case connected
-    case connecting
-    case disconnected
-}
-
-enum MQTTQoSLevel: UInt8 {
-    case QoS0 = 0b0000_0000
-    case QoS1 = 0b0000_0010
-    case QoS2 = 0b0000_0100
-
-    case Failure = 0x80
-}
-
-extension MQTTQoSLevel: Comparable {
-    static func <(lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
-        return lhs.rawValue < rhs.rawValue
-    }
-}
-
 
 struct MQTTMessage {
     var topic: String
@@ -58,7 +23,7 @@ struct MQTTMessage {
         self.retained = retained
     }
 
-    fileprivate init?(packet: MQTTPacket) {
+    internal init?(packet: MQTTPacket) {
         guard packet.type == .publish else {
             return nil
         }
@@ -69,7 +34,7 @@ struct MQTTMessage {
         retained = packet.retained
     }
 
-    fileprivate var header: UInt8 {
+    internal var header: UInt8 {
         var header = MQTTPacket.Header.publish
         if retained {
             header |= MQTTPacket.Publish.retained
@@ -178,10 +143,6 @@ final class MQTTClient: NSObject, StreamDelegate {
             strongSelf.inputStream = streams.input
             strongSelf.outputStream = streams.output
 
-            DispatchQueue.global(qos: strongSelf.options.readQosClass).async { [weak strongSelf] in
-                // strongSelf?.readStream(input: streams.input, output: streams.output)
-            }
-
             strongSelf.mqttConnect()
             strongSelf.delayedPing()
 
@@ -231,7 +192,7 @@ final class MQTTClient: NSObject, StreamDelegate {
             }
             
             
-            self?.mqttPing()
+            self?.mqttPingreq()
         })
     }
     
@@ -248,7 +209,7 @@ final class MQTTClient: NSObject, StreamDelegate {
                 return
             }
 
-            self?.mqttPing()
+            self?.mqttPingreq()
             self?.delayedPing()
         }
     }
@@ -276,10 +237,11 @@ final class MQTTClient: NSObject, StreamDelegate {
         var inputStream: InputStream?
         var outputStream: OutputStream?
 
-        Stream.getStreamsToHost(withName: options.host,
-                                port: options.port,
-                                inputStream: &inputStream,
-                                outputStream: &outputStream)
+        Stream.getStreamsToHost(
+            withName: options.host,
+            port: options.port,
+            inputStream: &inputStream,
+            outputStream: &outputStream)
 
         guard let input = inputStream, let output = outputStream else {
             completion(nil)
@@ -288,6 +250,7 @@ final class MQTTClient: NSObject, StreamDelegate {
         
         input.delegate = self
         output.delegate = self
+        
         
         input.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
         output.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
@@ -322,17 +285,19 @@ final class MQTTClient: NSObject, StreamDelegate {
         outputStream = nil
     }
 
-
+    // MARK: - Stream Delegate
     func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
-        
-        print("handle stream", aStream, eventCode)
-        
-        switch eventCode {
-        case .hasBytesAvailable:
-            readStream(input: aStream as! InputStream)
-        default:
-            break
-        }
+            switch eventCode {
+            case .hasBytesAvailable:
+                if let input = aStream as? InputStream {
+                    readStream(input: input)
+                }
+            case .errorOccurred:
+                options.autoReconnect ? autoReconnect() : disconnect()
+                break
+            default:
+                break
+            }
     }
 
     // MARK: - Stream reading
@@ -381,8 +346,6 @@ final class MQTTClient: NSObject, StreamDelegate {
                     break mainReading
                 }
             } while messageBuffer.pointee & 128 != 0
-
-
 
             // Variable header //
 
@@ -467,10 +430,9 @@ final class MQTTClient: NSObject, StreamDelegate {
         }
     }
 
-
     private func handlePacket(_ packet: MQTTPacket) {
 
-        print("\t\t<-", packet.type, packet.identifier ?? "")
+        // print("\t\t<-", packet.type, packet.identifier ?? "")
 
         switch packet.type {
         case .connack:
@@ -479,7 +441,6 @@ final class MQTTClient: NSObject, StreamDelegate {
                     state = .connected
                 }
                 didRecieveConack?(self, res)
-
             }
 
         case .publish:
@@ -500,7 +461,6 @@ final class MQTTClient: NSObject, StreamDelegate {
                     break
                 }
             }
-
 
             if !duplicate, let msg = MQTTMessage(packet: packet) {
                 didRecieveMessage?(self, msg)
@@ -555,14 +515,6 @@ final class MQTTClient: NSObject, StreamDelegate {
     }
 
     // MARK: - MQTT messages
-
-    /**
-     * |--------------------------------------
-     * | 7 6 5 4 |     3    |  2 1  | 0      |
-     * |  Type   | DUP flag |  QoS  | RETAIN |
-     * |--------------------------------------
-     */
-
 
     private func mqttConnect() {
         // http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718028
@@ -652,10 +604,9 @@ final class MQTTClient: NSObject, StreamDelegate {
         send(packet: packet)
     }
 
-    private func mqttPing() {
+    private func mqttPingreq() {
         // http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718081
 
-        pingCount += 1
         let packet = MQTTPacket(header: MQTTPacket.Header.pingreq)
         send(packet: packet)
     }
@@ -710,7 +661,7 @@ final class MQTTClient: NSObject, StreamDelegate {
 
         guard let output = outputStream else { return }
 
-        print(packet.type, packet.identifier ?? "", "->")
+        // print(packet.type, packet.identifier ?? "", "->")
 
         let serialized = packet.encoded
         var toSend = serialized.count
@@ -754,216 +705,4 @@ final class MQTTClient: NSObject, StreamDelegate {
         }
         return true
     }
-}
-
-// MARK: - Packet
-fileprivate struct MQTTPacket {
-
-    var header: UInt8 = 0
-    var variableHeader: Data = Data()
-    var identifier: UInt16?
-    var payload: Data = Data()
-    var topic: String?
-
-    var type: PacketType {
-        get {
-            return PacketType(rawValue: header & 0xF0) ?? PacketType(rawValue: 0)!
-        }
-        set {
-            header &= ~MQTTPacket.Header.typeMask
-            header |= newValue.rawValue
-        }
-    }
-
-    var remainingLength: Data {
-
-        var out = Data()
-        var length = variableHeader.count + payload.count
-
-        repeat {
-            var encodedByte = UInt8(length % 128)
-            length /= 128
-
-            if length > 0 {
-                encodedByte |= 128
-            }
-            out.append(encodedByte)
-
-        } while length > 0
-
-        return out
-    }
-
-    var encoded: Data {
-        var bytes = Data(bytes: [header])
-        bytes.append(remainingLength)
-        bytes.append(variableHeader)
-        bytes.append(payload)
-        return bytes
-    }
-
-    init(header: UInt8) {
-        self.header = header
-    }
-
-    init(header: MQTTPacket.Header) {
-        self.init(header: header)
-    }
-}
-
-// MARK: - Publish Packet
-fileprivate extension MQTTPacket {
-    var retained: Bool {
-        get {
-            return header & MQTTPacket.Publish.retained > 0
-        }
-        set {
-            header &= ~MQTTPacket.Publish.retained
-            if newValue {
-                header |= MQTTPacket.Publish.retained
-            }
-        }
-    }
-
-    var qos: MQTTQoSLevel {
-        get {
-            return MQTTQoSLevel(rawValue: header & MQTTPacket.Publish.qos) ?? .QoS0
-        }
-        set {
-            header &= ~MQTTPacket.Publish.qos
-            header |= newValue.rawValue
-        }
-    }
-
-    var dup: Bool {
-        get {
-            return header & MQTTPacket.Publish.dup < 0
-        }
-        set {
-            header &= ~MQTTPacket.Publish.dup
-            if newValue {
-                header |= MQTTPacket.Publish.dup
-            }
-        }
-    }
-}
-
-// MARK: - Connack Packet
-fileprivate extension MQTTPacket {
-
-    var connectionResponse: MQTTConnackResponse? {
-        if variableHeader.count >= 1 {
-        let raw = variableHeader[1]
-            return MQTTConnackResponse(rawValue: raw)
-        }
-        return nil
-    }
-
-    var sessionPresent: Bool? {
-        if variableHeader.count >= 1 {
-            return variableHeader[0] & 0x01 > 0
-        }
-        return nil
-    }
-}
-
-// MARK: - Suback Packet
-fileprivate extension MQTTPacket {
-    var maxQoS: [MQTTQoSLevel?] {
-        var qos = [MQTTQoSLevel?]()
-        for lvl in payload {
-            qos.append(MQTTQoSLevel(rawValue: lvl))
-        }
-        return qos
-    }
-}
-
-// MARK: - Packet Constants
-fileprivate extension MQTTPacket {
-
-    enum PacketType: UInt8 {
-        case connect =     0x10
-        case connack =     0x20
-        case publish =     0x30
-        case puback =      0x40
-        case pubrec =      0x50
-        case pubrel =      0x60
-        case pubcomp =     0x70
-        case subscribe =   0x80
-        case suback =      0x90
-        case unsubscribe = 0xa0
-        case unsuback =    0xb0
-        case pingreq =     0xc0
-        case pingresp =    0xd0
-        case disconnect =  0xe0
-    }
-
-    struct Header {
-        static let typeMask: UInt8 =          0xF0
-
-        
-        static let  connect: UInt8     = 0x10
-        static let  connack: UInt8     = 0x20
-        static let  publish: UInt8     = 0x30
-        static let  puback: UInt8      = 0x40
-        static let  pubrec: UInt8      = 0x50
-        static let  pubrel: UInt8      = 0x62
-        static let  pubcomp: UInt8     = 0x70
-        static let  subscribe: UInt8   = 0x82
-        static let  suback: UInt8      = 0x90
-        static let  unsubscribe: UInt8 = 0xa2
-        static let  unsuback: UInt8    = 0xb0
-        static let  pingreq: UInt8     = 0xc0
-        static let  pingresp: UInt8    = 0xd0
-        static let  disconnect: UInt8  = 0xe0
-    }
-
-
-    // Publish
-    struct Publish {
-        static let retained: UInt8 =      0b0000_0001
-        static let qos: UInt8 =           0b0000_0110
-        static let dup: UInt8 =           0b0000_1000
-    }
-    // Connection
-    struct Connect {
-        static let cleanSession: UInt8  = 1 << 1
-        static let will: UInt8          = 1 << 2
-        static let willQoS0: UInt8      = 0 << 0
-        static let willQos1: UInt8      = 1 << 3
-        static let willQos2: UInt8      = 1 << 4
-        static let willRetain: UInt8    = 1 << 5
-        static let password: UInt8      = 1 << 6
-        static let username: UInt8      = 1 << 7
-    }
-}
-
-// MARK: - Extensions
-fileprivate extension UInt8 {
-    var string: String {
-
-        var byte = ""
-        for i in 0..<8 {
-            byte = "\((self >> i) & 0b1)" + byte
-        }
-        return byte
-    }
-}
-
-
-fileprivate extension Data {
-    static func += (block: inout Data, byte: UInt8) {
-        block.append(byte)
-    }
-
-    static func += (block: inout Data, short: UInt16) {
-        block += UInt8(short >> 8)
-        block += UInt8(short & 0xFF)
-    }
-
-    static func += (block: inout Data, string: String) {
-        block += UInt16(string.utf8.count)
-        block += string.data(using: .utf8)!
-    }
-
 }
