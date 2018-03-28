@@ -116,7 +116,7 @@ struct MQTTWill {
 
 // MARK: - MQTT Client
 
-final class MQTTClient {
+final class MQTTClient: NSObject, StreamDelegate {
     private var options: MQTTOptions
     private var inputStream: InputStream?
     private var outputStream: OutputStream?
@@ -179,7 +179,7 @@ final class MQTTClient {
             strongSelf.outputStream = streams.output
 
             DispatchQueue.global(qos: strongSelf.options.readQosClass).async { [weak strongSelf] in
-                strongSelf?.readStream(input: streams.input, output: streams.output)
+                // strongSelf?.readStream(input: streams.input, output: streams.output)
             }
 
             strongSelf.mqttConnect()
@@ -285,6 +285,12 @@ final class MQTTClient {
             completion(nil)
             return
         }
+        
+        input.delegate = self
+        output.delegate = self
+        
+        input.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
+        output.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
 
         if options.useTLS {
             input.setProperty(StreamSocketSecurityLevel.tlSv1, forKey: .socketSecurityLevelKey)
@@ -316,9 +322,21 @@ final class MQTTClient {
         outputStream = nil
     }
 
-    // MARK: - Stream reading
 
-    private func readStream(input: InputStream, output: OutputStream) {
+    func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+        
+        print("handle stream", aStream, eventCode)
+        
+        switch eventCode {
+        case .hasBytesAvailable:
+            readStream(input: aStream as! InputStream)
+        default:
+            break
+        }
+    }
+
+    // MARK: - Stream reading
+    private func readStream(input: InputStream) {
         var packet: MQTTPacket!
         let messageBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: options.bufferSize)
 
@@ -327,8 +345,7 @@ final class MQTTClient {
             messageBuffer.deallocate(capacity: options.bufferSize)
         }
 
-        mainReading: while input.streamStatus == .open {
-
+        mainReading: while input.streamStatus == .open && input.hasBytesAvailable {
             // Header
             let count = input.read(messageBuffer, maxLength: 1)
             if count == 0 {
