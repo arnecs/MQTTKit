@@ -6,7 +6,7 @@ import Foundation
 import Dispatch
 
 
-struct MQTTMessage {
+public struct MQTTMessage {
     var topic: String
     var payload: Data
     var qos: MQTTQoSLevel
@@ -44,7 +44,7 @@ struct MQTTMessage {
     }
 }
 
-struct MQTTOptions {
+public struct MQTTOptions {
     var host: String!
     private var _port: Int?
     var port: Int {
@@ -72,7 +72,7 @@ struct MQTTOptions {
     }
 }
 
-struct MQTTWill {
+public struct MQTTWill {
     var qos: MQTTQoSLevel
     var retained: Bool
     var topic: String
@@ -81,7 +81,7 @@ struct MQTTWill {
 
 // MARK: - MQTT Client
 
-final class MQTTClient: NSObject, StreamDelegate {
+final public class MQTTClient: NSObject, StreamDelegate {
     private var options: MQTTOptions
     private var inputStream: InputStream?
     private var outputStream: OutputStream?
@@ -93,16 +93,16 @@ final class MQTTClient: NSObject, StreamDelegate {
     private var pendingPackets: [UInt16:MQTTPacket] = [:]
 
     // MARK: - Delegate Methods
-    var didRecieveMessage: ((_ mqtt: MQTTClient, _ message: MQTTMessage) -> Void)?
-    var didRecieveConack: ((_ mqtt: MQTTClient, _ status: MQTTConnackResponse) -> Void)?
-    var didSubscribe: ((_ mqtt: MQTTClient, _ topic: String) -> Void)?
-    var didUnsubscribe: ((_ mqtt: MQTTClient, _ topic: String) -> Void)?
-    var didConnect: ((_ mqtt: MQTTClient, _ connected: Bool) -> Void)?
-    var didDisconnect: ((_ mqtt: MQTTClient, _ error: Error?) -> Void)?
-    var didChangeState: ((_ mqtt: MQTTClient, _ state: MQTTConnectionState) -> Void)?
+    public var didRecieveMessage: ((_ mqtt: MQTTClient, _ message: MQTTMessage) -> Void)?
+    public var didRecieveConack: ((_ mqtt: MQTTClient, _ status: MQTTConnackResponse) -> Void)?
+    public var didSubscribe: ((_ mqtt: MQTTClient, _ topic: String) -> Void)?
+    public var didUnsubscribe: ((_ mqtt: MQTTClient, _ topic: String) -> Void)?
+    public var didConnect: ((_ mqtt: MQTTClient, _ connected: Bool) -> Void)?
+    public var didDisconnect: ((_ mqtt: MQTTClient, _ error: Error?) -> Void)?
+    public var didChangeState: ((_ mqtt: MQTTClient, _ state: MQTTConnectionState) -> Void)?
 
     // MARK: - Public interface
-    private(set) var state: MQTTConnectionState = .disconnected {
+    public private(set) var state: MQTTConnectionState = .disconnected {
         didSet {
             guard state != oldValue else {
                 return
@@ -119,21 +119,19 @@ final class MQTTClient: NSObject, StreamDelegate {
         }
     }
     
-    init(host: String) {
+    public init(host: String) {
         self.options = MQTTOptions(host: host)
     }
 
-    init(options: MQTTOptions) {
+    public init(options: MQTTOptions) {
         self.options = options
     }
 
     deinit {
         disconnect()
     }
-
-    
-    
-    func connect(completion: ((_ success: Bool) -> ())? = nil) {
+ 
+    public func connect(completion: ((_ success: Bool) -> ())? = nil) {
         openStreams() { [weak self] streams in
             guard let strongSelf = self, let streams = streams else {
                 completion?(false)
@@ -153,24 +151,24 @@ final class MQTTClient: NSObject, StreamDelegate {
         }
     }
 
-    func disconnect() {
+    public func disconnect() {
         mqttDisconnect()
         closeStreams()
     }
 
-    func subscribe(to topic: String) {
+    public func subscribe(to topic: String) {
         mqttSubscribe(to: topic)
     }
 
-    func unsubscribe(from topic: String) {
+    public func unsubscribe(from topic: String) {
         mqttUnsubscribe(from: topic)
     }
 
-    func publish(message: MQTTMessage) {
+    public func publish(message: MQTTMessage) {
         mqttPublish(message: message)
     }
 
-    func publish(to topic: String, payload: Data, qos: MQTTQoSLevel = .QoS0, retained: Bool = false) {
+    public func publish(to topic: String, payload: Data, qos: MQTTQoSLevel = .QoS0, retained: Bool = false) {
         let message = MQTTMessage(topic: topic, payload: payload, qos: qos, retained: retained)
         mqttPublish(message: message)
     }
@@ -263,7 +261,7 @@ final class MQTTClient: NSObject, StreamDelegate {
         }
     }
 
-     func closeStreams() {
+    internal func closeStreams() {
         inputStream?.close()
         outputStream?.close()
 
@@ -272,7 +270,7 @@ final class MQTTClient: NSObject, StreamDelegate {
     }
 
     // MARK: - Stream Delegate
-    func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+    public func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
             switch eventCode {
             case .hasBytesAvailable:
                 if let input = aStream as? InputStream {
@@ -636,11 +634,6 @@ final class MQTTClient: NSObject, StreamDelegate {
         send(packet: packet)
     }
 
-    private func nextMessageId() -> UInt16 {
-        messageId = messageId &+ 1
-        return messageId
-    }
-
     // MARK: - Send Packet
 
     private func send(packet: MQTTPacket) {
@@ -670,10 +663,15 @@ final class MQTTClient: NSObject, StreamDelegate {
             }
         }
     }
-
+    
+    private func nextMessageId() -> UInt16 {
+        messageId = messageId &+ 1
+        return messageId
+    }
+    
     // MARK: - Public Static
 
-    static func match(filter: String, with topic: String) -> Bool {
+    static public func match(filter: String, with topic: String) -> Bool {
 
         let filterComponents = filter.components(separatedBy: "/")
         let topicComponents = topic.components(separatedBy: "/")

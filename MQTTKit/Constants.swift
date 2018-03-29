@@ -14,7 +14,7 @@ internal struct MQTTProtocol {
     static let Name = "MQTT"
 }
 
-enum MQTTConnackResponse : UInt8 {
+public enum MQTTConnackResponse : UInt8 {
     case accepted =                     0x00
     case unacceptableProtocolVersion =  0x01
     case identifierRejected =           0x02
@@ -24,13 +24,13 @@ enum MQTTConnackResponse : UInt8 {
     case reserved =                     0x06
 }
 
-enum MQTTConnectionState {
+public enum MQTTConnectionState {
     case connected
     case connecting
     case disconnected
 }
 
-enum MQTTQoSLevel: UInt8, Comparable {
+public enum MQTTQoSLevel: UInt8, Comparable {
     case QoS0 = 0b0000_0000
     case QoS1 = 0b0000_0010
     case QoS2 = 0b0000_0100
@@ -38,8 +38,8 @@ enum MQTTQoSLevel: UInt8, Comparable {
     case Failure = 0x80
 }
 
-internal extension MQTTQoSLevel {
-    static func <(lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
+public extension MQTTQoSLevel {
+    public static func <(lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
 }
