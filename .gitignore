@@ -99,6 +99,7 @@ fastlane/test_output
 
 ### Xcode Patch ###
 *.xcodeproj/*
+xcuserdata
 !*.xcodeproj/project.pbxproj
 !*.xcodeproj/xcshareddata/
 !*.xcworkspace/contents.xcworkspacedata
