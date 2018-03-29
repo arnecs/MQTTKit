@@ -24,10 +24,14 @@ class MQTTConnectedTests: XCTestCase {
     override func setUp() {
         let connected = expectation(description: "Setup Connected")
         
-        mqtt = MQTTClient(host: "localhost")
+        mqtt = MQTTClient(host: host)
         
-        mqtt?.connect() {_ in
-            connected.fulfill()
+        mqtt?.connect() { success in
+            if success {
+                connected.fulfill()
+            } else {
+                XCTFail("Not connected")
+            }
         }
         
         wait(for: [connected], timeout: timeout)
@@ -109,7 +113,7 @@ class MQTTConnectedTests: XCTestCase {
         var options = MQTTOptions(host: host)
         options.will = MQTTWill(qos: .QoS0, retained: false, topic: willTopic, message: willMessage)
         options.autoReconnect = false
-        var unstableMqtt = MQTTClient(options: options)
+        let unstableMqtt = MQTTClient(options: options)
         
         
         unstableMqtt.connect { _ in
@@ -131,6 +135,20 @@ class MQTTConnectedTests: XCTestCase {
         
         
     }
+    
+    func testKeepAlive() {
+        let disconnect = expectation(description: "Keep alive")
+        disconnect.isInverted = true
+        
+        mqtt?.didDisconnect = {_, _ in
+            disconnect.fulfill()
+        }
+        
+        
+        wait(for: [disconnect], timeout: 20)
+        
+        XCTAssertEqual(mqtt?.state, MQTTConnectionState.connected)
+    }
 
 }
 
@@ -141,7 +159,7 @@ class MQTTKitTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        mqtt = MQTTClient(host: "localhost")
+        mqtt = MQTTClient(host: host)
     }
     
     override func tearDown() {

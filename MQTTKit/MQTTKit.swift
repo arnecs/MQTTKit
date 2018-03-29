@@ -85,7 +85,8 @@ final class MQTTClient: NSObject, StreamDelegate {
     private var options: MQTTOptions
     private var inputStream: InputStream?
     private var outputStream: OutputStream?
-    private var keepAliveTimer: Timer?
+    private let keepAliveTimeout: Double = 30
+    private var lastServerResponse: Date?
     private var writeQueue = DispatchQueue(label: "mqtt_write")
     private var messageId: UInt16 = 0
     private var pingCount = 0
@@ -130,21 +131,21 @@ final class MQTTClient: NSObject, StreamDelegate {
         disconnect()
     }
 
+    
+    
     func connect(completion: ((_ success: Bool) -> ())? = nil) {
-        pingCount = 0
         openStreams() { [weak self] streams in
             guard let strongSelf = self, let streams = streams else {
                 completion?(false)
                 return
             }
-
-            strongSelf.disconnect()
+            strongSelf.closeStreams()
 
             strongSelf.inputStream = streams.input
             strongSelf.outputStream = streams.output
 
             strongSelf.mqttConnect()
-            strongSelf.delayedPing()
+            strongSelf.startKeepAliveTimer()
 
             strongSelf.messageId = 0x00
 
@@ -177,57 +178,42 @@ final class MQTTClient: NSObject, StreamDelegate {
     // MARK: - Keep alive timer
     
     private func startKeepAliveTimer() {
-        
+
         guard options.keepAliveInterval > 0 else {
             return
         }
         
-        keepAliveTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(options.keepAliveInterval), repeats: true, block: { [weak self] timer in
-            // TODO: Ping count
-            
-            guard self?.outputStream?.streamStatus == .open else {
-                timer.invalidate()
-                self?.autoReconnect()
-                return
-            }
-            
-            
-            self?.mqttPingreq()
-        })
-    }
-    
-    private func delayedPing() {
-        let interval = options.keepAliveInterval
-        let time = DispatchTime.now() + Double(interval / 2)
+        let time = DispatchTime.now() + Double(options.keepAliveInterval)
         DispatchQueue.main.asyncAfter(deadline: time) { [weak self] in
-
-            // stop pinging server if client deallocated or stream closed
-            guard self?.outputStream?.streamStatus == .open, self!.pingCount < 4 else {
+             
+            guard let strongSelf = self, strongSelf.outputStream?.streamStatus == .open, let lsr = strongSelf.lastServerResponse, -lsr.timeIntervalSinceNow < Double(strongSelf.options.keepAliveInterval) * 1.5  else {
                 self?.state = .disconnected
-                self?.closeStreams()
                 self?.autoReconnect()
                 return
             }
-
+            
             self?.mqttPingreq()
-            self?.delayedPing()
+            self?.startKeepAliveTimer()
         }
     }
 
     private func autoReconnect() {
+        
+        if lastServerResponse == nil {
+            lastServerResponse = Date()
+        }
+        
         guard self.options.autoReconnect else {
-            self.disconnect()
+            self.closeStreams()
             return
         }
-
-        let interval = options.keepAliveInterval
-        let time = DispatchTime.now() + Double(interval / 2)
-        DispatchQueue.main.asyncAfter(deadline: time) { [weak self] in
-
-            if self?.state == .disconnected {
-                self?.connect()
-                self?.autoReconnect()
-            }
+        
+        if  -lastServerResponse!.timeIntervalSinceNow < keepAliveTimeout && self.state == .disconnected {
+            connect()
+        
+            // Schedule next retry
+            let time = DispatchTime.now() + Double(options.keepAliveInterval / 2)
+            DispatchQueue.main.asyncAfter(deadline: time, execute: self.autoReconnect)
         }
     }
 
@@ -293,7 +279,7 @@ final class MQTTClient: NSObject, StreamDelegate {
                     readStream(input: input)
                 }
             case .errorOccurred:
-                options.autoReconnect ? autoReconnect() : disconnect()
+                //options.autoReconnect ? autoReconnect() : disconnect()
                 break
             default:
                 break
@@ -431,9 +417,11 @@ final class MQTTClient: NSObject, StreamDelegate {
     }
 
     private func handlePacket(_ packet: MQTTPacket) {
-
-        // print("\t\t<-", packet.type, packet.identifier ?? "")
-
+        
+        lastServerResponse = Date()
+        
+        print("\t\t<-", packet.type, packet.identifier ?? "")
+        
         switch packet.type {
         case .connack:
             if let res = packet.connectionResponse {
@@ -503,6 +491,9 @@ final class MQTTClient: NSObject, StreamDelegate {
             print("Unhandled packet -", packet.type)
             break
         }
+        
+        
+        //startKeepAliveTimer()
     }
 
     private func handlePendingPackets() {
@@ -606,7 +597,6 @@ final class MQTTClient: NSObject, StreamDelegate {
 
     private func mqttPingreq() {
         // http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718081
-
         let packet = MQTTPacket(header: MQTTPacket.Header.pingreq)
         send(packet: packet)
     }
@@ -661,7 +651,7 @@ final class MQTTClient: NSObject, StreamDelegate {
 
         guard let output = outputStream else { return }
 
-        // print(packet.type, packet.identifier ?? "", "->")
+         print(packet.type, packet.identifier ?? "", "->")
 
         let serialized = packet.encoded
         var toSend = serialized.count
