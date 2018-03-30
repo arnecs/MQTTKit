@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 // MARK: - Packet
 internal struct MQTTPacket {
     

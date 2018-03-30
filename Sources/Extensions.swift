@@ -22,5 +22,30 @@ internal extension Data {
         block += UInt16(string.utf8.count)
         block += string.data(using: .utf8)!
     }
-    
+}
+
+// MARK: - Public Static
+public struct MQTTKit {
+    static public func match(filter: String, with topic: String) -> Bool {
+        
+        let filterComponents = filter.components(separatedBy: "/")
+        let topicComponents = topic.components(separatedBy: "/")
+        
+        guard filterComponents.count <= topicComponents.count else {
+            return false
+        }
+        
+        
+        for i in 0..<filterComponents.count {
+            let filterLevel = filterComponents[i], topicLevel = topicComponents[i]
+            if  filterLevel == topicLevel || filterLevel == "+" {
+                continue
+            } else if filterLevel == "#" && i == filterComponents.count - 1 {
+                return true
+            } else {
+                return false
+            }
+        }
+        return true
+    }
 }

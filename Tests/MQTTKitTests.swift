@@ -11,22 +11,21 @@ import XCTest
 
 
 let timeout: TimeInterval = 5
-//let host = "localhost"
-let host = "test.mosquitto.org"
+let host = ProcessInfo.processInfo.environment["MQTTKit_TEST_HOST"] ?? "localhost"
 let topicToSub = "/a/topic"
 let messagePayload = "Some interesting content".data(using: .utf8)!
 let willTopic = "/will"
-let willMessage = "disconnected"
+let willMessage = "disconnected".data(using: .utf8)!
 
 class MQTTConnectedTests: XCTestCase {
 
-    var mqtt: MQTTClient?
+    var mqtt: MQTTSession?
 
     override func setUp() {
         let connected = expectation(description: "Setup Connected")
 
-        mqtt = MQTTClient(host: host)
-
+        mqtt = MQTTSession(host: host)
+        
         mqtt?.connect() { success in
             if success {
                 connected.fulfill()
@@ -112,9 +111,10 @@ class MQTTConnectedTests: XCTestCase {
         mqtt?.subscribe(to: willTopic)
 
         var options = MQTTOptions(host: host)
-        options.will = MQTTWill(qos: .QoS0, retained: false, topic: willTopic, message: willMessage)
+        //options.will = MQTTWill(qos: .QoS0, retained: false, topic: willTopic, message: willMessage)
+        options.will = MQTTMessage(topic: willTopic, payload: willMessage, qos: .QoS0, retained: false)
         options.autoReconnect = false
-        let unstableMqtt = MQTTClient(options: options)
+        let unstableMqtt = MQTTSession(options: options)
 
 
         unstableMqtt.connect { _ in
@@ -125,7 +125,7 @@ class MQTTConnectedTests: XCTestCase {
 
         mqtt?.didRecieveMessage = {_, msg in
             XCTAssertEqual(msg.topic, willTopic)
-            XCTAssertEqual(msg.string, willMessage)
+            XCTAssertEqual(msg.payload, willMessage)
 
             recievedWill.fulfill()
         }
@@ -155,12 +155,12 @@ class MQTTConnectedTests: XCTestCase {
 
 class MQTTKitTests: XCTestCase {
 
-    var mqtt: MQTTClient!
+    var mqtt: MQTTSession!
 
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
-        mqtt = MQTTClient(host: host)
+        mqtt = MQTTSession(host: host)
     }
 
     override func tearDown() {
@@ -246,15 +246,15 @@ class MQTTKitTests: XCTestCase {
 
 
     func testTopicMatch() {
-        XCTAssertTrue(MQTTClient.match(filter: "/a/b/c", with: "/a/b/c"))
-        XCTAssertTrue(MQTTClient.match(filter: "/a/+/c", with: "/a/b/c"))
-        XCTAssertTrue(MQTTClient.match(filter: "/a/#", with: "/a/b/c"))
-        XCTAssertTrue(MQTTClient.match(filter: "+/+/+/+", with: "/a/b/c"))
-        XCTAssertTrue(MQTTClient.match(filter: "#", with: "/a/b/c"))
-        XCTAssertTrue(MQTTClient.match(filter: "topic with/ space", with: "topic with/ space"))
+        XCTAssertTrue(MQTTKit.match(filter: "/a/b/c", with: "/a/b/c"))
+        XCTAssertTrue(MQTTKit.match(filter: "/a/+/c", with: "/a/b/c"))
+        XCTAssertTrue(MQTTKit.match(filter: "/a/#", with: "/a/b/c"))
+        XCTAssertTrue(MQTTKit.match(filter: "+/+/+/+", with: "/a/b/c"))
+        XCTAssertTrue(MQTTKit.match(filter: "#", with: "/a/b/c"))
+        XCTAssertTrue(MQTTKit.match(filter: "topic with/ space", with: "topic with/ space"))
 
 
-        XCTAssertFalse(MQTTClient.match(filter: "/a", with: "a"))
-        XCTAssertFalse(MQTTClient.match(filter: "/A/B/C", with: "/a/b/c"))
+        XCTAssertFalse(MQTTKit.match(filter: "/a", with: "a"))
+        XCTAssertFalse(MQTTKit.match(filter: "/A/B/C", with: "/a/b/c"))
     }
 }

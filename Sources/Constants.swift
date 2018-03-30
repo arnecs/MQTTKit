@@ -8,7 +8,6 @@
 
 import Foundation
 
-
 internal struct MQTTProtocol {
     static let Level: UInt8 = 4
     static let Name = "MQTT"
@@ -35,8 +34,14 @@ public enum MQTTQoSLevel: UInt8, Comparable {
     case QoS1 = 0b0000_0010
     case QoS2 = 0b0000_0100
     
+    static let mostOnce = MQTTQoSLevel.QoS0
+    static let leastOnce = MQTTQoSLevel.QoS1
+    static let exactlyOnce = MQTTQoSLevel.QoS2
+    
     case Failure = 0x80
 }
+
+
 
 public extension MQTTQoSLevel {
     public static func <(lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
@@ -64,7 +69,7 @@ internal extension MQTTPacket {
     }
     
     struct Header {
-        static let typeMask: UInt8 =          0xF0
+        static let  typeMask: UInt8    = 0xF0
         static let  connect: UInt8     = 0x10
         static let  connack: UInt8     = 0x20
         static let  publish: UInt8     = 0x30
