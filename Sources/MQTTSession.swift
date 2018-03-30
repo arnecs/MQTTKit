@@ -492,7 +492,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
     private func mqttUnsubscribe(from topic: String) {
         // http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718072
         
-        var packet = MQTTPacket(header: MQTTPacket.Header.subscribe)
+        var packet = MQTTPacket(header: MQTTPacket.Header.unsubscribe)
         let id = nextMessageId()
         packet.identifier = id
         packet.variableHeader += id
