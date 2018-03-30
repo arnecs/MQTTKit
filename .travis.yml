@@ -16,4 +16,11 @@ env:
 #  - docker pull eclipse-mosquitto
 #  - docker run -p 1883:1883 eclipse-mosquitto
 script:
-  - set -o pipefail && xcodebuild -scheme MQTTKit -destination "$DESTINATION" $ACTION CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH = NO | xcpretty
+  - set -o pipefail
+  &&  xcodebuild 
+  -scheme MQTTKit
+  -destination "$DESTINATION"
+  $ACTION
+  CODE_SIGNING_REQUIRED=NO
+  ONLY_ACTIVE_ARCH=NO
+  | xcpretty
