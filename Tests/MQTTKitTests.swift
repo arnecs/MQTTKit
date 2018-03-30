@@ -171,6 +171,7 @@ class MQTTKitTests: XCTestCase {
         let pubExpQoS2 = expectation(description: "Publish QoS2")
         let unsubExp = expectation(description: "Unsubscribe")
         let multiSubExp = expectation(description: "Subscribed to multible topics")
+        let multiUnsubExp = expectation(description: "Unsubscribed to multible topics")
         let disExp = expectation(description: "Disconnect")
         pubExpQoS0.expectedFulfillmentCount = 3
         pubExpQoS1.expectedFulfillmentCount = 3
@@ -229,10 +230,10 @@ class MQTTKitTests: XCTestCase {
 
         wait(for: [pubExpQoS0, pubExpQoS1, pubExpQoS2], timeout: timeout)
 
-        mqtt.didUnsubscribe = {_, topic in
-            XCTAssertEqual(topicToSub, topic)
+        mqtt.didUnsubscribe = {_, topics in
+            XCTAssertEqual(topicToSub, topics[0])
             
-            if topicToSub == topic {
+            if topicToSub == topics[0] {
                 unsubExp.fulfill()
             }
         }
@@ -244,7 +245,6 @@ class MQTTKitTests: XCTestCase {
         mqtt.didSubscribe = {_, topics in
             XCTAssertEqual(manyTopics.count, topics.count)
             
-            print(topics)
             for (index, topic) in topics.enumerated() {
                 XCTAssertEqual(topic, manyTopics[index])
             }
@@ -259,6 +259,18 @@ class MQTTKitTests: XCTestCase {
         mqtt.subscribe(to: mappedTopics)
         
         wait(for: [multiSubExp], timeout: timeout)
+        
+        mqtt.didUnsubscribe = {_, topics in
+            
+            XCTAssertEqual(manyTopics.count, topics.count)
+            for (index, topic) in topics.enumerated() {
+                XCTAssertEqual(topic, manyTopics[index])
+            }
+            
+            multiUnsubExp.fulfill()
+        }
+        
+        wait(for: [multiUnsubExp], timeout: timeout)
         
         mqtt.didDisconnect = {_, _ in
             disExp.fulfill()

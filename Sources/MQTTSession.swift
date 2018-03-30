@@ -21,7 +21,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
     public var didRecieveMessage: ((_ mqtt: MQTTSession, _ message: MQTTMessage) -> Void)?
     public var didRecieveConack: ((_ mqtt: MQTTSession, _ status: MQTTConnackResponse) -> Void)?
     public var didSubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
-    public var didUnsubscribe: ((_ mqtt: MQTTSession, _ topic: String) -> Void)?
+    public var didUnsubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
     public var didConnect: ((_ mqtt: MQTTSession, _ connected: Bool) -> Void)?
     public var didDisconnect: ((_ mqtt: MQTTSession, _ error: Error?) -> Void)?
     public var didChangeState: ((_ mqtt: MQTTSession, _ state: MQTTConnectionState) -> Void)?
@@ -402,14 +402,14 @@ final public class MQTTSession: NSObject, StreamDelegate {
             }
             
         case .suback:
-            if let id = packet.identifier, let topics = pendingPackets[id]?.topics, pendingPackets[id]?.type == .subscribe {
+            if let id = packet.identifier, pendingPackets[id]?.type == .subscribe, let topics = pendingPackets[id]?.topics {
                 pendingPackets.removeValue(forKey: id)
                 didSubscribe?(self, topics)
             }
         case .unsuback:
-            if let id = packet.identifier, let topic = pendingPackets[id]?.topic, pendingPackets[id]?.type == .unsubscribe {
+            if let id = packet.identifier, pendingPackets[id]?.type == .unsubscribe, let topics = pendingPackets[id]?.topics  {
                 pendingPackets.removeValue(forKey: id)
-                didUnsubscribe?(self, topic)
+                didUnsubscribe?(self, topics)
             }
         case .pingresp:
             handlePendingPackets()
