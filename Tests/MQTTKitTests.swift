@@ -43,7 +43,7 @@ class MQTTConnectedTests: XCTestCase {
         if mqtt == nil {
             return
         }
-        
+
         if mqtt.state != .disconnected {
             let disconnected = expectation(description: "Tear Down Disconnected")
 
@@ -52,7 +52,7 @@ class MQTTConnectedTests: XCTestCase {
             }
             mqtt.disconnect()
             wait(for: [disconnected], timeout: timeout)
-            
+
             self.mqtt = nil
         }
     }
@@ -60,7 +60,7 @@ class MQTTConnectedTests: XCTestCase {
     func testReconnect () {
 
         let reconnect = expectation(description: "Auto Reconnect")
-        
+
         mqtt.didConnect = {m, connected in
             XCTAssert(connected)
             reconnect.fulfill()
@@ -123,23 +123,23 @@ class MQTTConnectedTests: XCTestCase {
         wait(for: [recievedWill], timeout: TimeInterval(20))
 
     }
-    
+
     func testKeepAlive() {
         let keepAliveFailExpectation = expectation(description: "Keep Alive")
         keepAliveFailExpectation.isInverted = true
-        
+
         mqtt!.didDisconnect = {_, _ in
             keepAliveFailExpectation.fulfill()
         }
-        
+
         mqtt?.didChangeState = {_, state in
             keepAliveFailExpectation.fulfill()
         }
-        
+
         wait(for: [keepAliveFailExpectation], timeout: 60.0)
         mqtt.didDisconnect = nil
         mqtt.didChangeState = nil
-        
+
         XCTAssertEqual(mqtt?.state, MQTTConnectionState.connected)
     }
 }
@@ -191,7 +191,7 @@ class MQTTKitTests: XCTestCase {
         wait(for: [conExp], timeout: timeout)
 
         mqtt.didSubscribe = {_, topics in
-            
+
             print(topics)
             XCTAssertEqual(topics[0], topicToSub)
 
@@ -204,9 +204,9 @@ class MQTTKitTests: XCTestCase {
 
 
         mqtt.didRecieveMessage = {_, message in
-            
+
             print("RECIEVED MESSAGE - TOPIC:", message.topic)
-            
+
             XCTAssertEqual(topicToSub, message.topic)
             switch message.qos {
             case .QoS0:
@@ -227,8 +227,8 @@ class MQTTKitTests: XCTestCase {
         mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS2, retained: false)
         mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS1, retained: false)
         mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS0, retained: false)
-        
-        
+
+
         mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS2, retained: false))
         mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS0, retained: false))
         mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS1, retained: false))
@@ -237,47 +237,47 @@ class MQTTKitTests: XCTestCase {
 
         mqtt.didUnsubscribe = {_, topics in
             XCTAssertEqual(topicToSub, topics[0])
-            
+
             if topicToSub == topics[0] {
                 unsubExp.fulfill()
             }
         }
-        
+
         mqtt.unsubscribe(from: topicToSub)
-        
+
         wait(for: [unsubExp], timeout: timeout)
-        
+
         mqtt.didSubscribe = {_, topics in
             XCTAssertEqual(manyTopics.count, topics.count)
-            
+
             for (index, topic) in topics.enumerated() {
                 XCTAssertEqual(topic, manyTopics[index])
             }
-            
+
             multiSubExp.fulfill()
         }
-        
-        
+
+
         let mappedTopics = manyTopics.map() { (topic) -> (String, MQTTQoSLevel) in
             return (topic, .QoS2)
         }
         mqtt.subscribe(to: mappedTopics)
-        
+
         wait(for: [multiSubExp], timeout: timeout)
-        
+
         mqtt.didUnsubscribe = {_, topics in
-            
+
             XCTAssertEqual(manyTopics.count, topics.count)
             for (index, topic) in topics.enumerated() {
                 XCTAssertEqual(topic, manyTopics[index])
             }
-            
+
             multiUnsubExp.fulfill()
         }
-        
+
         mqtt.unsubscribe(from: manyTopics)
         wait(for: [multiUnsubExp], timeout: timeout)
-        
+
         mqtt.didDisconnect = {_, _ in
             disExp.fulfill()
         }
