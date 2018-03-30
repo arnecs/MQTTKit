@@ -11,13 +11,13 @@ import XCTest
 
 
 let timeout: TimeInterval = 5
-let host = ProcessInfo.processInfo.environment["MQTTKit_TEST_HOST"] ?? "localhost"
+let host = ProcessInfo.processInfo.environment["MQTTKit_TEST_HOST"] ?? "test.mosquitto.org"
 let port = Int(ProcessInfo.processInfo.environment["MQTTKit_TEST_PORT"] ?? "1883") ?? 1883
-let topicToSub = "/a/topic"
+let topicToSub = "/a/topic/very/specific/topic/to/not/get/disturbed by other messages"
 let messagePayload = "Some interesting content".data(using: .utf8)!
-let willTopic = "/will"
+let willTopic = "/will546724975"
 let willMessage = "disconnected".data(using: .utf8)!
-let manyTopics = ["a","/a/+","#", "a/b/+/d"]
+let manyTopics = ["as34dsf","/afdwgf/+","/gmkorw04/hgw", "a3gri92/24g2gb/+/2g45d"]
 
 class MQTTConnectedTests: XCTestCase {
 
