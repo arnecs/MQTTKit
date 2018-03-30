@@ -17,6 +17,7 @@ let topicToSub = "/a/topic"
 let messagePayload = "Some interesting content".data(using: .utf8)!
 let willTopic = "/will"
 let willMessage = "disconnected".data(using: .utf8)!
+let manyTopics = ["a","/a/+","#", "a/b/+/d"]
 
 class MQTTConnectedTests: XCTestCase {
 
@@ -94,8 +95,8 @@ class MQTTConnectedTests: XCTestCase {
         let subscribed = expectation(description: "Subscribed")
         let recievedWill = expectation(description: "Recieved Will")
 
-        mqtt?.didSubscribe = {_,topic in
-            XCTAssertEqual(willTopic, topic)
+        mqtt?.didSubscribe = {_,topics in
+            XCTAssertEqual(willTopic, topics[0])
             subscribed.fulfill()
         }
 
@@ -169,6 +170,7 @@ class MQTTKitTests: XCTestCase {
         let pubExpQoS1 = expectation(description: "Publish QoS1")
         let pubExpQoS2 = expectation(description: "Publish QoS2")
         let unsubExp = expectation(description: "Unsubscribe")
+        let multiSubExp = expectation(description: "Subscribed to multible topics")
         let disExp = expectation(description: "Disconnect")
         pubExpQoS0.expectedFulfillmentCount = 3
         pubExpQoS1.expectedFulfillmentCount = 3
@@ -187,8 +189,8 @@ class MQTTKitTests: XCTestCase {
         mqtt.connect()
         wait(for: [conExp], timeout: timeout)
 
-        mqtt.didSubscribe = {_, topic in
-            XCTAssertEqual(topic, topicToSub)
+        mqtt.didSubscribe = {_, topics in
+            XCTAssertEqual(topics[0], topicToSub)
 
             subExp.fulfill()
         }
@@ -239,6 +241,24 @@ class MQTTKitTests: XCTestCase {
         
         wait(for: [unsubExp], timeout: timeout)
         
+        mqtt.didSubscribe = {_, topics in
+            XCTAssertEqual(manyTopics.count, topics.count)
+            
+            print(topics)
+            for (index, topic) in topics.enumerated() {
+                XCTAssertEqual(topic, manyTopics[index])
+            }
+            
+            multiSubExp.fulfill()
+        }
+        
+        
+        let mappedTopics = manyTopics.map() { (topic) -> (String, MQTTQoSLevel) in
+            return (topic, .QoS2)
+        }
+        mqtt.subscribe(to: mappedTopics)
+        
+        wait(for: [multiSubExp], timeout: timeout)
         
         mqtt.didDisconnect = {_, _ in
             disExp.fulfill()

@@ -9,6 +9,7 @@
 import Foundation
 
 // MARK: - Packet
+
 internal struct MQTTPacket {
     
     var header: UInt8 = 0
@@ -119,14 +120,36 @@ internal extension MQTTPacket {
     }
 }
 
+// MARK: - Subscribe Packet
+internal extension MQTTPacket {
+    var topics: [String]? {
+        var topics = [String]()
+        var pos = 0
+        
+        while pos + 1 < payload.count {
+            let length = Int((UInt16(payload[pos]) << 8) + UInt16(payload[pos + 1]))
+            pos += 2
+            if let topic = String(bytes: payload.subdata(in: pos..<(pos + length)), encoding: .utf8) {
+                topics.append(topic)
+            }
+            pos += length + 1
+        }
+        return topics
+    }
+}
+
 // MARK: - Suback Packet
 internal extension MQTTPacket {
-    var maxQoS: [MQTTQoSLevel?] {
-        var qos = [MQTTQoSLevel?]()
-        for lvl in payload {
-            qos.append(MQTTQoSLevel(rawValue: lvl))
+    var maxQoS: [MQTTQoSLevel]? {
+        var out = [MQTTQoSLevel]()
+        for byte in payload {
+            if let qos = MQTTQoSLevel(rawValue: byte) {
+                out.append(qos)
+            } else {
+                return nil
+            }
         }
-        return qos
+        return out
     }
 }
 
