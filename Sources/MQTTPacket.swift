@@ -132,7 +132,7 @@ internal extension MQTTPacket {
             if let topic = String(bytes: payload.subdata(in: pos..<(pos + length)), encoding: .utf8) {
                 topics.append(topic)
             }
-            pos += length + 1
+            pos += length + (type == .subscribe ? 1 : 0)
         }
         return topics
     }

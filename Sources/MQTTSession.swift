@@ -21,7 +21,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
     public var didRecieveMessage: ((_ mqtt: MQTTSession, _ message: MQTTMessage) -> Void)?
     public var didRecieveConack: ((_ mqtt: MQTTSession, _ status: MQTTConnackResponse) -> Void)?
     public var didSubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
-    public var didUnsubscribe: ((_ mqtt: MQTTSession, _ topic: String) -> Void)?
+    public var didUnsubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
     public var didConnect: ((_ mqtt: MQTTSession, _ connected: Bool) -> Void)?
     public var didDisconnect: ((_ mqtt: MQTTSession, _ error: Error?) -> Void)?
     public var didChangeState: ((_ mqtt: MQTTSession, _ state: MQTTConnectionState) -> Void)?
@@ -85,7 +85,6 @@ final public class MQTTSession: NSObject, StreamDelegate {
     }
     
     public func subscribe(to topic: String) {
-        //mqttSubscribe(to: topic)
         subscribe(to: [(topic, .QoS2)])
     }
     
@@ -94,11 +93,11 @@ final public class MQTTSession: NSObject, StreamDelegate {
     }
     
     public func unsubscribe(from topic: String) {
-        mqttUnsubscribe(from: topic)
+        mqttUnsubscribe(from: [topic])
     }
     
     public func unsubscribe(from topics: [String]) {
-        //mqttUnsubscribe(from: topics)
+        mqttUnsubscribe(from: topics)
     }
     
     public func publish(message: MQTTMessage) {
@@ -301,9 +300,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
                 
                 remainingLength -= count
                 packet.topic = String(bytesNoCopy: messageBuffer, length: topicLength, encoding: .utf8, freeWhenDone: false)
-            }
-            
-            
+            }         
             
             if packet.type.rawValue + packet.qos.rawValue >= (MQTTPacket.Header.publish + MQTTQoSLevel.QoS1.rawValue) && packet.type.rawValue <= MQTTPacket.Header.unsuback {
                 
@@ -351,7 +348,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
         
         lastServerResponse = Date()
         
-        print("\t\t<-", packet.type, packet.identifier ?? "")
+        // print("\t\t<-", packet.type, packet.identifier ?? "")
         
         switch packet.type {
         case .connack:
@@ -402,14 +399,14 @@ final public class MQTTSession: NSObject, StreamDelegate {
             }
             
         case .suback:
-            if let id = packet.identifier, let topics = pendingPackets[id]?.topics, pendingPackets[id]?.type == .subscribe {
+            if let id = packet.identifier, pendingPackets[id]?.type == .subscribe, let topics = pendingPackets[id]?.topics {
                 pendingPackets.removeValue(forKey: id)
                 didSubscribe?(self, topics)
             }
         case .unsuback:
-            if let id = packet.identifier, let topic = pendingPackets[id]?.topic, pendingPackets[id]?.type == .unsubscribe {
+            if let id = packet.identifier, pendingPackets[id]?.type == .unsubscribe, let topics = pendingPackets[id]?.topics  {
                 pendingPackets.removeValue(forKey: id)
-                didUnsubscribe?(self, topic)
+                didUnsubscribe?(self, topics)
             }
         case .pingresp:
             handlePendingPackets()
@@ -480,19 +477,6 @@ final public class MQTTSession: NSObject, StreamDelegate {
         self.state = .disconnected
     }
     
-    private func mqttSubscribe(to topic: String, qos: MQTTQoSLevel = .QoS0) {
-        
-        var packet = MQTTPacket(header: MQTTPacket.Header.subscribe)
-        let id = nextMessageId()
-        packet.identifier = id
-        packet.variableHeader += id
-        packet.payload += topic    // section 3.8.3
-        packet.topic = topic
-        packet.payload += UInt8(2) // QoS = 2
-        
-        send(packet: packet)
-    }
-    
     private func mqttSubscribe(to topics: [(String, MQTTQoSLevel)]) {
         
         var packet = MQTTPacket(header: MQTTPacket.Header.subscribe)
@@ -507,14 +491,15 @@ final public class MQTTSession: NSObject, StreamDelegate {
         send(packet: packet)
     }
     
-    private func mqttUnsubscribe(from topic: String) {
+    private func mqttUnsubscribe(from topics: [String]) {
         
         var packet = MQTTPacket(header: MQTTPacket.Header.unsubscribe)
         let id = nextMessageId()
         packet.identifier = id
         packet.variableHeader += id
-        packet.payload += topic
-        packet.topic = topic
+        for topic in topics {
+            packet.payload += topic
+        }
         
         send(packet: packet)
     }
@@ -583,7 +568,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
         
         guard let output = outputStream else { return }
         
-        print(packet.type, packet.identifier ?? "", "->")
+        // print(packet.type, packet.identifier ?? "", "->")
         
         let serialized = packet.encoded
         var toSend = serialized.count
