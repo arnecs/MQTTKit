@@ -24,6 +24,16 @@ internal extension Data {
     }
 }
 
+internal extension UInt16 {
+    init(msb: UInt8, lsb: UInt8) {
+        self = UInt16(msb) << 8 + lsb
+    }
+    
+    static func + (lhs: UInt16, rhs: UInt8) -> UInt16 {
+        return lhs + UInt16(rhs)
+    }
+}
+
 // MARK: - Public Static
 public struct MQTTKit {
     static public func match(filter: String, with topic: String) -> Bool {

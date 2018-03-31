@@ -103,31 +103,27 @@ internal extension MQTTPacket {
 
 // MARK: - Connack Packet
 internal extension MQTTPacket {
-    
     var connectionResponse: MQTTConnackResponse? {
-        if variableHeader.count >= 1 {
-            let raw = variableHeader[1]
-            return MQTTConnackResponse(rawValue: raw)
-        }
-        return nil
+        guard type == .connack, variableHeader.count >= 1 else { return nil }
+        let raw = variableHeader[1]
+        return MQTTConnackResponse(rawValue: raw)
     }
     
     var sessionPresent: Bool? {
-        if variableHeader.count >= 1 {
-            return variableHeader[0] & 0x01 > 0
-        }
-        return nil
+        guard type == .connack, !variableHeader.isEmpty else { return nil }
+        return variableHeader[0] & 0x01 > 0
     }
 }
 
-// MARK: - Subscribe Packet
+// MARK: - Subscribe | Unsubscribe Packet
 internal extension MQTTPacket {
     var topics: [String]? {
+        guard type == .subscribe || type == .unsubscribe else { return nil }
         var topics = [String]()
         var pos = 0
         
         while pos + 1 < payload.count {
-            let length = Int((UInt16(payload[pos]) << 8) + UInt16(payload[pos + 1]))
+            let length = Int(UInt16(msb: payload[pos], lsb: payload[pos + 1]))
             pos += 2
             if let topic = String(bytes: payload.subdata(in: pos..<(pos + length)), encoding: .utf8) {
                 topics.append(topic)
@@ -141,6 +137,7 @@ internal extension MQTTPacket {
 // MARK: - Suback Packet
 internal extension MQTTPacket {
     var maxQoS: [MQTTQoSLevel]? {
+        guard type == .suback else { return nil }
         var out = [MQTTQoSLevel]()
         for byte in payload {
             if let qos = MQTTQoSLevel(rawValue: byte) {

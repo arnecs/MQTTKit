@@ -286,7 +286,6 @@ class MQTTKitTests: XCTestCase {
         wait(for: [disExp], timeout: timeout)
     }
 
-
     func testTopicMatch() {
         XCTAssertTrue(MQTTKit.match(filter: "/a/b/c", with: "/a/b/c"))
         XCTAssertTrue(MQTTKit.match(filter: "/a/+/c", with: "/a/b/c"))
