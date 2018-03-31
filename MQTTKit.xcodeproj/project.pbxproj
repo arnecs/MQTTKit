@@ -16,6 +16,7 @@
 		10666253206BCC4C00A7BC4F /* MQTTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10666249206BCC4C00A7BC4F /* MQTTKit.framework */; };
 		10666258206BCC4C00A7BC4F /* MQTTKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10666257206BCC4C00A7BC4F /* MQTTKitTests.swift */; };
 		1066625A206BCC4C00A7BC4F /* MQTTKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 1066624C206BCC4C00A7BC4F /* MQTTKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		10DE612C207018B300C77969 /* MQTTSessionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10DE612B207018B300C77969 /* MQTTSessionDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +42,7 @@
 		10666252206BCC4C00A7BC4F /* MQTTKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MQTTKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		10666257206BCC4C00A7BC4F /* MQTTKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MQTTKitTests.swift; sourceTree = "<group>"; };
 		10666259206BCC4C00A7BC4F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		10DE612B207018B300C77969 /* MQTTSessionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MQTTSessionDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +87,7 @@
 			children = (
 				1066624C206BCC4C00A7BC4F /* MQTTKit.h */,
 				1032C4B0206E465D002BD7CA /* MQTTSession.swift */,
+				10DE612B207018B300C77969 /* MQTTSessionDelegate.swift */,
 				1032C4AC206E4559002BD7CA /* MQTTMessage.swift */,
 				1032C4AE206E4580002BD7CA /* MQTTOptions.swift */,
 				10457ADD206C3B28000C9BB0 /* MQTTPacket.swift */,
@@ -218,6 +221,7 @@
 				1032C4AF206E4580002BD7CA /* MQTTOptions.swift in Sources */,
 				10457AE0206C3C6A000C9BB0 /* Extensions.swift in Sources */,
 				1032C4AD206E4559002BD7CA /* MQTTMessage.swift in Sources */,
+				10DE612C207018B300C77969 /* MQTTSessionDelegate.swift in Sources */,
 				10457ADE206C3B28000C9BB0 /* MQTTPacket.swift in Sources */,
 				10457AE2206C3DBA000C9BB0 /* Constants.swift in Sources */,
 				1032C4B1206E465E002BD7CA /* MQTTSession.swift in Sources */,

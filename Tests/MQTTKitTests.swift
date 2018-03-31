@@ -28,7 +28,7 @@ class MQTTConnectedTests: XCTestCase {
         let connected = expectation(description: "Setup Connected")
 
         mqtt = MQTTSession(host: host, port: port)
-        mqtt.didConnect = {_, success in
+        mqtt.didConnect = { success in
             if success {
                 connected.fulfill()
             } else {
@@ -47,7 +47,7 @@ class MQTTConnectedTests: XCTestCase {
         if mqtt.state != .disconnected {
             let disconnected = expectation(description: "Tear Down Disconnected")
 
-            mqtt.didDisconnect = {_,_ in
+            mqtt.didDisconnect = { err in
                 disconnected.fulfill()
             }
             mqtt.disconnect()
@@ -61,7 +61,7 @@ class MQTTConnectedTests: XCTestCase {
 
         let reconnect = expectation(description: "Auto Reconnect")
 
-        mqtt.didConnect = {m, connected in
+        mqtt.didConnect = {connected in
             XCTAssert(connected)
             reconnect.fulfill()
         }
@@ -77,7 +77,7 @@ class MQTTConnectedTests: XCTestCase {
         let disconnect = expectation(description: "Disconnect")
         weak var mqttRef = mqtt
 
-        mqtt?.didDisconnect = {_, _ in
+        mqtt?.didDisconnect = { err in
             disconnect.fulfill()
         }
 
@@ -95,7 +95,7 @@ class MQTTConnectedTests: XCTestCase {
         let subscribed = expectation(description: "Subscribed")
         let recievedWill = expectation(description: "Recieved Will")
 
-        mqtt?.didSubscribe = {_,topics in
+        mqtt?.didSubscribe = {topics in
             XCTAssertEqual(willTopic, topics[0])
             subscribed.fulfill()
         }
@@ -113,7 +113,7 @@ class MQTTConnectedTests: XCTestCase {
 
         wait(for: [connected, subscribed], timeout: timeout)
 
-        mqtt?.didRecieveMessage = {_, msg in
+        mqtt?.didRecieveMessage = { msg in
             XCTAssertEqual(msg.topic, willTopic)
             XCTAssertEqual(msg.payload, willMessage)
             recievedWill.fulfill()
@@ -128,11 +128,11 @@ class MQTTConnectedTests: XCTestCase {
         let keepAliveFailExpectation = expectation(description: "Keep Alive")
         keepAliveFailExpectation.isInverted = true
 
-        mqtt!.didDisconnect = {_, _ in
+        mqtt!.didDisconnect = { _ in
             keepAliveFailExpectation.fulfill()
         }
 
-        mqtt?.didChangeState = {_, state in
+        mqtt?.didChangeState = { state in
             keepAliveFailExpectation.fulfill()
         }
 
@@ -177,7 +177,7 @@ class MQTTKitTests: XCTestCase {
         pubExpQoS1.expectedFulfillmentCount = 3
         pubExpQoS2.expectedFulfillmentCount = 3
 
-        mqtt.didConnect = {_, connected in
+        mqtt.didConnect = { connected in
 
             guard connected else {
                 XCTFail()
@@ -190,7 +190,7 @@ class MQTTKitTests: XCTestCase {
         mqtt.connect()
         wait(for: [conExp], timeout: timeout)
 
-        mqtt.didSubscribe = {_, topics in
+        mqtt.didSubscribe = { topics in
 
             print(topics)
             XCTAssertEqual(topics[0], topicToSub)
@@ -203,7 +203,7 @@ class MQTTKitTests: XCTestCase {
         wait(for: [subExp], timeout: timeout)
 
 
-        mqtt.didRecieveMessage = {_, message in
+        mqtt.didRecieveMessage = { message in
 
             print("RECIEVED MESSAGE - TOPIC:", message.topic)
 
@@ -235,10 +235,10 @@ class MQTTKitTests: XCTestCase {
 
         wait(for: [pubExpQoS0, pubExpQoS1, pubExpQoS2], timeout: timeout)
 
-        mqtt.didUnsubscribe = {_, topics in
-            XCTAssertEqual(topicToSub, topics[0])
+        mqtt.didUnsubscribe = { topics in
+            XCTAssertEqual(topicToSub, topics.first)
 
-            if topicToSub == topics[0] {
+            if topicToSub == topics.first {
                 unsubExp.fulfill()
             }
         }
@@ -247,7 +247,7 @@ class MQTTKitTests: XCTestCase {
 
         wait(for: [unsubExp], timeout: timeout)
 
-        mqtt.didSubscribe = {_, topics in
+        mqtt.didSubscribe = { topics in
             XCTAssertEqual(manyTopics.count, topics.count)
             multiSubExp.fulfill()
         }
@@ -256,7 +256,7 @@ class MQTTKitTests: XCTestCase {
 
         wait(for: [multiSubExp], timeout: timeout)
 
-        mqtt.didUnsubscribe = {_, topics in
+        mqtt.didUnsubscribe = { topics in
 
             XCTAssertEqual(manyTopics.count, topics.count)
             for (index, topic) in topics.enumerated() {
@@ -269,7 +269,7 @@ class MQTTKitTests: XCTestCase {
         mqtt.unsubscribe(from: manyTopics)
         wait(for: [multiUnsubExp], timeout: timeout)
 
-        mqtt.didDisconnect = {_, _ in
+        mqtt.didDisconnect = { err in
             disExp.fulfill()
         }
 

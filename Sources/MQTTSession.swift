@@ -17,16 +17,17 @@ final public class MQTTSession: NSObject, StreamDelegate {
     private var messageId: UInt16 = 0
     private var pendingPackets: [UInt16:MQTTPacket] = [:]
 
-    // MARK: - Delegate Methods
-    public var didRecieveMessage: ((_ mqtt: MQTTSession, _ message: MQTTMessage) -> Void)?
-    public var didRecieveConack: ((_ mqtt: MQTTSession, _ status: MQTTConnackResponse) -> Void)?
-    public var didSubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
-    public var didUnsubscribe: ((_ mqtt: MQTTSession, _ topics: [String]) -> Void)?
-    public var didConnect: ((_ mqtt: MQTTSession, _ connected: Bool) -> Void)?
-    public var didDisconnect: ((_ mqtt: MQTTSession, _ error: Error?) -> Void)?
-    public var didChangeState: ((_ mqtt: MQTTSession, _ state: MQTTConnectionState) -> Void)?
+    // MARK: - Delegate Callback Closures
+    public var didRecieveMessage: ((_ message: MQTTMessage) -> Void)?
+    public var didRecieveConack: ((_ status: MQTTConnackResponse) -> Void)?
+    public var didSubscribe: ((_ topics: [String]) -> Void)?
+    public var didUnsubscribe: ((_ topics: [String]) -> Void)?
+    public var didConnect: ((_ connected: Bool) -> Void)?
+    public var didDisconnect: ((_ error: Error?) -> Void)?
+    public var didChangeState: ((_ state: MQTTConnectionState) -> Void)?
 
     // MARK: - Public interface
+    public weak var delegate: MQTTSessionDelegate?
     public private(set) var state: MQTTConnectionState = .disconnected {
         didSet {
             guard state != oldValue else {
@@ -34,13 +35,15 @@ final public class MQTTSession: NSObject, StreamDelegate {
             }
             switch state {
             case .connected:
-                didConnect?(self, true)
+                didConnect?(true)
             case .disconnected:
-                didDisconnect?(self, nil)
+                didDisconnect?(nil)
             default:
                 break
             }
-            didChangeState?(self, state)
+            
+            didChangeState?(state)
+            delegate?.mqttSession(self, didChangeState: state)
         }
     }
 
@@ -174,7 +177,6 @@ final public class MQTTSession: NSObject, StreamDelegate {
 
         input.delegate = self
         output.delegate = self
-
 
         input.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
         output.schedule(in: RunLoop.main, forMode: RunLoopMode.defaultRunLoopMode)
@@ -364,13 +366,13 @@ final public class MQTTSession: NSObject, StreamDelegate {
                 if res == .accepted {
                     state = .connected
                 }
-                didRecieveConack?(self, res)
+                didRecieveConack?(res)
+                delegate?.mqttSession(self, didRecieveConnack: res)
             }
 
         case .publish:
             var duplicate = false
             if let id = packet.identifier {
-
                 switch packet.qos {
                 case .QoS1:
                     mqttPuback(id: id)
@@ -380,14 +382,13 @@ final public class MQTTSession: NSObject, StreamDelegate {
                         duplicate = true
                     }
                     mqttPubrec(id: id)
-
                 default:
                     break
                 }
             }
-
             if !duplicate, let msg = MQTTMessage(packet: packet) {
-                didRecieveMessage?(self, msg)
+                didRecieveMessage?(msg)
+                delegate?.mqttSession(self, didRecieveMessage: msg)
             }
         case .puback:
             break
@@ -395,27 +396,26 @@ final public class MQTTSession: NSObject, StreamDelegate {
             if let id = packet.identifier {
                 mqttPubrel(id: id)
             }
-
         case .pubcomp:
             if let id = packet.identifier {
                 pendingPackets.removeValue(forKey: id)
             }
-
         case .pubrel:
             if let id = packet.identifier {
                 mqttPubcomp(id: id)
                 pendingPackets.removeValue(forKey: id)
             }
-
         case .suback:
-            if let id = packet.identifier, pendingPackets[id]?.type == .subscribe, let topics = pendingPackets[id]?.topics {
+            if let id = packet.identifier, pendingPackets[id]?.type == .subscribe, let topics = pendingPackets[id]?.topics, let maxQoS = packet.maxQoS {
                 pendingPackets.removeValue(forKey: id)
-                didSubscribe?(self, topics)
+                didSubscribe?(topics)
+                delegate?.mqttSession(self, didSubscribeToTopics: topics, withMaxQoSLevel: maxQoS)
             }
         case .unsuback:
             if let id = packet.identifier, pendingPackets[id]?.type == .unsubscribe, let topics = pendingPackets[id]?.topics  {
                 pendingPackets.removeValue(forKey: id)
-                didUnsubscribe?(self, topics)
+                didUnsubscribe?(topics)
+                delegate?.mqttSession(self, didUnsubscribeToTopics: topics)
             }
         case .pingresp:
             handlePendingPackets()
