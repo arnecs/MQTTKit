@@ -224,6 +224,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
         defer {
             messageBuffer.deinitialize(count: options.bufferSize)
             messageBuffer.deallocate(capacity: options.bufferSize)
+            messageBuffer.deallocate()
         }
 
         mainReading: while input.streamStatus == .open && input.hasBytesAvailable {
