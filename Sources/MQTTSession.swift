@@ -84,11 +84,19 @@ final public class MQTTSession: NSObject, StreamDelegate {
         closeStreams()
     }
 
-    public func subscribe(to topic: String) {
-        subscribe(to: [(topic, .QoS2)])
+    public func subscribe(to topic: String, qos: MQTTQoSLevel = .QoS2) {
+        subscribe(to: [topic:qos])
     }
-
-    public func subscribe(to topics: [(filter: String, qos: MQTTQoSLevel )]) {
+    
+    public func subscribe(to topics: [String]) {
+        var topicQoS = [String: MQTTQoSLevel]()
+        for topic in topics {
+            topicQoS[topic] = .QoS2
+        }
+        subscribe(to: topicQoS)
+    }
+    
+    public func subscribe(to topics: [String: MQTTQoSLevel]) {
         mqttSubscribe(to: topics)
     }
 
@@ -223,7 +231,6 @@ final public class MQTTSession: NSObject, StreamDelegate {
 
         defer {
             messageBuffer.deinitialize(count: options.bufferSize)
-            messageBuffer.deallocate(capacity: options.bufferSize)
             messageBuffer.deallocate()
         }
 
@@ -474,16 +481,16 @@ final public class MQTTSession: NSObject, StreamDelegate {
         self.state = .disconnected
     }
 
-    private func mqttSubscribe(to topics: [(String, MQTTQoSLevel)]) {
+    private func mqttSubscribe(to topics: [String: MQTTQoSLevel]) {
 
         var packet = MQTTPacket(header: MQTTPacket.Header.subscribe)
         let id = nextMessageId()
         packet.identifier = id
         packet.variableHeader += id
 
-        for topic in topics {
-            packet.payload += topic.0
-            packet.payload += topic.1.rawValue >> 1
+        for (topic, qos) in topics {
+            packet.payload += topic
+            packet.payload += qos.rawValue >> 1
         }
         send(packet: packet)
     }

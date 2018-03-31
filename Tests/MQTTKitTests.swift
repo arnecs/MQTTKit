@@ -249,19 +249,10 @@ class MQTTKitTests: XCTestCase {
 
         mqtt.didSubscribe = {_, topics in
             XCTAssertEqual(manyTopics.count, topics.count)
-
-            for (index, topic) in topics.enumerated() {
-                XCTAssertEqual(topic, manyTopics[index])
-            }
-
             multiSubExp.fulfill()
         }
 
-
-        let mappedTopics = manyTopics.map() { (topic) -> (String, MQTTQoSLevel) in
-            return (topic, .QoS2)
-        }
-        mqtt.subscribe(to: mappedTopics)
+        mqtt.subscribe(to: manyTopics)
 
         wait(for: [multiSubExp], timeout: timeout)
 
