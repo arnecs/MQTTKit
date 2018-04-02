@@ -1,20 +1,16 @@
-#sudo: required
-
-language: objective-c
-osx_image: xcode9.2
+os: osx
+language: generic
+osx_image: xcode9.3beta
 
 #services:
 #  - docker
 
-#env:
-#  - ACTION=test  PLATFORM=Mac     DESTINATION='platform=macOS'
-#  - ACTION=test  PLATFORM=iOS     DESTINATION='platform=iOS Simulator,name=iPhone 8'
-#  - ACTION=build PLATFORM=watchOS DESTINATION='platform=watchOS Simulator,name=Apple Watch - 38mm'
-#  - ACTION=test  PLATFORM=tvOS    DESTINATION='platform=tvOS Simulator,name=Apple TV'
-
 #before_install:
 #  - docker pull eclipse-mosquitto
-#  - docker run -p 1883:1883 eclipse-mosquitto
+#  - docker run -dp 1883:1883 eclipse-mosquitto
+
+install:
+  - eval "$(curl -sL https://swiftenv.fuller.li/install.sh)"
+
 script:
   - swift test
-  #- set -o pipefail && xcodebuild -scheme MQTTKit -destination "$DESTINATION" $ACTION CODE_SIGNING_REQUIRED=NO ONLY_ACTIVE_ARCH=NO | xcpretty
