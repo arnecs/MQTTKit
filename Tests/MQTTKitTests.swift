@@ -205,8 +205,6 @@ class MQTTKitTests: XCTestCase {
 
         mqtt.didRecieveMessage = { message in
 
-            print("RECIEVED MESSAGE - TOPIC:", message.topic)
-
             XCTAssertEqual(topicToSub, message.topic)
             switch message.qos {
             case .QoS0:
