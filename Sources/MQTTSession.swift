@@ -16,7 +16,10 @@ final public class MQTTSession: NSObject, StreamDelegate {
     private var writeQueue = DispatchQueue(label: "mqtt_write")
     private var messageId: UInt16 = 0
     private var pendingPackets: [UInt16: MQTTPacket] = [:]
-
+    
+    private var keepAliveTimer: Timer?
+    private var autoReconnectTimer: Timer?
+    
     // MARK: - Delegate Callback Closures
     public var didRecieveMessage: ((_ message: MQTTMessage) -> Void)?
     public var didRecieveConack: ((_ status: MQTTConnackResponse) -> Void)?
@@ -83,6 +86,8 @@ final public class MQTTSession: NSObject, StreamDelegate {
     }
 
     public func disconnect() {
+        autoReconnectTimer?.invalidate()
+        keepAliveTimer?.invalidate()
         mqttDisconnect()
         closeStreams()
     }
@@ -123,44 +128,45 @@ final public class MQTTSession: NSObject, StreamDelegate {
     // MARK: - Keep alive timer
 
     private func startKeepAliveTimer() {
-
+        keepAliveTimer?.invalidate()
         guard options.keepAliveInterval > 0 else {
             return
         }
-
-        let time = DispatchTime.now() + Double(options.keepAliveInterval)
-        DispatchQueue.main.asyncAfter(deadline: time) { [weak self] in
-
-            guard let strongSelf = self, strongSelf.outputStream?.streamStatus == .open,
-                -strongSelf.lastServerResponse.timeIntervalSinceNow < Double(strongSelf.options.keepAliveInterval) * 1.5  else {
-                self?.state = .disconnected
-                self?.autoReconnect()
-                return
-            }
-
-            self?.mqttPingreq()
-            self?.startKeepAliveTimer()
+        
+        DispatchQueue.main.async { 
+            self.keepAliveTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(self.options.keepAliveInterval / 2), repeats: true, block: { [weak self] timer in
+                guard self?.outputStream?.streamStatus == .open,
+                    -self!.lastServerResponse.timeIntervalSinceNow < Double(self!.options.keepAliveInterval) * 1.5  else {
+                        timer.invalidate()
+                        self?.state = .disconnected
+                        self?.autoReconnect()
+                        return
+                }
+                
+                self?.mqttPingreq()
+            })
         }
     }
 
     private func autoReconnect() {
-
+        autoReconnectTimer?.invalidate()
         guard self.options.autoReconnect else {
             self.closeStreams()
             return
         }
-
-        if  -lastServerResponse.timeIntervalSinceNow < options.autoReconnectTimeout && self.state == .disconnected {
-            connect()
-
-            // Schedule next retry
-            let time = DispatchTime.now() + Double(options.keepAliveInterval / 2)
-            DispatchQueue.main.asyncAfter(deadline: time, execute: self.autoReconnect)
+        
+        DispatchQueue.main.async {
+            self.autoReconnectTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(self.options.keepAliveInterval / 2), repeats: true, block: { [lsr = self.lastServerResponse, timeout = self.options.autoReconnectTimeout] timer in
+                guard -lsr.timeIntervalSinceNow < timeout && self.state == .disconnected else {
+                    timer.invalidate()
+                    return
+                }
+                self.connect()
+            })
         }
     }
 
     // MARK: - Socket connection
-
     private func openStreams(completion: @escaping (((input: InputStream, output: OutputStream)?) -> Void)) {
         var inputStream: InputStream?
         var outputStream: OutputStream?
@@ -369,6 +375,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
                 }
                 didRecieveConack?(res)
                 delegate?.mqttSession(self, didRecieveConnack: res)
+                autoReconnectTimer?.invalidate()
             }
 
         case .publish:

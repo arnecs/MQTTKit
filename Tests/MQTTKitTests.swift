@@ -56,7 +56,7 @@ class MQTTConnectedTests: XCTestCase {
         }
     }
 
-    func testReconnect () {
+    func testAutoReconnect () {
 
         let reconnect = expectation(description: "Auto Reconnect")
 
@@ -274,15 +274,17 @@ class MQTTKitTests: XCTestCase {
     }
 
     func testTopicMatch() {
-        XCTAssertTrue(MQTTKit.match(filter: "/a/b/c", with: "/a/b/c"))
-        XCTAssertTrue(MQTTKit.match(filter: "/a/+/c", with: "/a/b/c"))
-        XCTAssertTrue(MQTTKit.match(filter: "/a/#", with: "/a/b/c"))
-        XCTAssertTrue(MQTTKit.match(filter: "+/+/+/+", with: "/a/b/c"))
-        XCTAssertTrue(MQTTKit.match(filter: "#", with: "/a/b/c"))
-        XCTAssertTrue(MQTTKit.match(filter: "topic with/ space", with: "topic with/ space"))
+        measure {
+            XCTAssertTrue(MQTTKit.match(filter: "/a/b/c", with: "/a/b/c"))
+            XCTAssertTrue(MQTTKit.match(filter: "/a/+/c", with: "/a/b/c"))
+            XCTAssertTrue(MQTTKit.match(filter: "/a/#", with: "/a/b/c"))
+            XCTAssertTrue(MQTTKit.match(filter: "+/+/+/+", with: "/a/b/c"))
+            XCTAssertTrue(MQTTKit.match(filter: "#", with: "/a/b/c"))
+            XCTAssertTrue(MQTTKit.match(filter: "topic with/ space", with: "topic with/ space"))
 
 
-        XCTAssertFalse(MQTTKit.match(filter: "/a", with: "a"))
-        XCTAssertFalse(MQTTKit.match(filter: "/A/B/C", with: "/a/b/c"))
+            XCTAssertFalse(MQTTKit.match(filter: "/a", with: "a"))
+            XCTAssertFalse(MQTTKit.match(filter: "/A/B/C", with: "/a/b/c"))
+        }
     }
 }
