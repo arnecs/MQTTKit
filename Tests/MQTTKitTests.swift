@@ -9,7 +9,6 @@
 import XCTest
 @testable import MQTTKit
 
-
 let timeout: TimeInterval = 5
 let host = ProcessInfo.processInfo.environment["MQTTKit_TEST_HOST"] ?? "test.mosquitto.org"
 let port = Int(ProcessInfo.processInfo.environment["MQTTKit_TEST_PORT"] ?? "1883") ?? 1883
@@ -17,7 +16,7 @@ let topicToSub = "/a/topic/very/specific/topic/to/not/get/disturbed by other mes
 let messagePayload = "Some interesting content".data(using: .utf8)!
 let willTopic = "/will546724975"
 let willMessage = "disconnected".data(using: .utf8)!
-let manyTopics = ["as34dsf","/afdwgf/+","/gmkorw04/hgw", "a3gri92/24g2gb/+/2g45d"]
+let manyTopics = ["as34dsf", "/afdwgf/+", "/gmkorw04/hgw", "a3gri92/24g2gb/+/2g45d"]
 
 class MQTTConnectedTests: XCTestCase {
 
@@ -89,7 +88,6 @@ class MQTTConnectedTests: XCTestCase {
 
     }
 
-
     func testWill() {
         let connected = expectation(description: "Connected")
         let subscribed = expectation(description: "Subscribed")
@@ -103,7 +101,7 @@ class MQTTConnectedTests: XCTestCase {
         mqtt?.subscribe(to: willTopic)
 
         var options = MQTTOptions(host: host)
-        options.will = MQTTMessage(topic: willTopic, payload: willMessage, qos: .QoS0, retained: false)
+        options.will = MQTTMessage(topic: willTopic, payload: willMessage, qos: .qos0, retained: false)
         options.autoReconnect = false
         let unstableMqtt = MQTTSession(options: options)
 
@@ -180,7 +178,7 @@ class MQTTKitTests: XCTestCase {
         mqtt.didConnect = { connected in
 
             guard connected else {
-                XCTFail()
+                XCTFail("Not Connected")
                 return
             }
 
@@ -207,29 +205,29 @@ class MQTTKitTests: XCTestCase {
 
             XCTAssertEqual(topicToSub, message.topic)
             switch message.qos {
-            case .QoS0:
+            case .qos0:
                 pubExpQoS0.fulfill()
-            case .QoS1:
+            case .qos1:
                 pubExpQoS1.fulfill()
-            case .QoS2:
+            case .qos2:
                 pubExpQoS2.fulfill()
             default:
                 break
             }
         }
 
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS0, retained: false)
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS1, retained: false)
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS2, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos0, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos1, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos2, retained: false)
 
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS2, retained: false)
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS1, retained: false)
-        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .QoS0, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos2, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos1, retained: false)
+        mqtt.publish(to: topicToSub, payload: messagePayload, qos: .qos0, retained: false)
 
 
-        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS2, retained: false))
-        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS0, retained: false))
-        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .QoS1, retained: false))
+        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .qos2, retained: false))
+        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .qos0, retained: false))
+        mqtt.publish(message: MQTTMessage(topic: topicToSub, payload: messagePayload, qos: .qos1, retained: false))
 
         wait(for: [pubExpQoS0, pubExpQoS1, pubExpQoS2], timeout: timeout)
 

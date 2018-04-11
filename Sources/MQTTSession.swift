@@ -15,7 +15,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
     private lazy var lastServerResponse: Date = Date()
     private var writeQueue = DispatchQueue(label: "mqtt_write")
     private var messageId: UInt16 = 0
-    private var pendingPackets: [UInt16:MQTTPacket] = [:]
+    private var pendingPackets: [UInt16: MQTTPacket] = [:]
 
     // MARK: - Delegate Callback Closures
     public var didRecieveMessage: ((_ message: MQTTMessage) -> Void)?
@@ -62,8 +62,8 @@ final public class MQTTSession: NSObject, StreamDelegate {
         disconnect()
     }
 
-    public func connect(completion: ((_ success: Bool) -> ())? = nil) {
-        openStreams() { [weak self] streams in
+    public func connect(completion: ((_ success: Bool) -> Void)? = nil) {
+        openStreams { [weak self] streams in
             guard let strongSelf = self, let streams = streams else {
                 completion?(false)
                 return
@@ -75,7 +75,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
 
             strongSelf.mqttConnect()
             strongSelf.startKeepAliveTimer()
-            
+
             strongSelf.messageId = 0x00
 
             completion?(true)
@@ -87,14 +87,14 @@ final public class MQTTSession: NSObject, StreamDelegate {
         closeStreams()
     }
 
-    public func subscribe(to topic: String, qos: MQTTQoSLevel = .QoS2) {
-        subscribe(to: [topic:qos])
+    public func subscribe(to topic: String, qos: MQTTQoSLevel = .qos2) {
+        subscribe(to: [topic: qos])
     }
     
     public func subscribe(to topics: [String]) {
         var topicQoS = [String: MQTTQoSLevel]()
         for topic in topics {
-            topicQoS[topic] = .QoS2
+            topicQoS[topic] = .qos2
         }
         subscribe(to: topicQoS)
     }
@@ -115,7 +115,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
         mqttPublish(message: message)
     }
 
-    public func publish(to topic: String, payload: Data, qos: MQTTQoSLevel = .QoS0, retained: Bool = false) {
+    public func publish(to topic: String, payload: Data, qos: MQTTQoSLevel = .qos0, retained: Bool = false) {
         let message = MQTTMessage(topic: topic, payload: payload, qos: qos, retained: retained)
         mqttPublish(message: message)
     }
@@ -131,7 +131,8 @@ final public class MQTTSession: NSObject, StreamDelegate {
         let time = DispatchTime.now() + Double(options.keepAliveInterval)
         DispatchQueue.main.asyncAfter(deadline: time) { [weak self] in
 
-            guard let strongSelf = self, strongSelf.outputStream?.streamStatus == .open, -strongSelf.lastServerResponse.timeIntervalSinceNow < Double(strongSelf.options.keepAliveInterval) * 1.5  else {
+            guard let strongSelf = self, strongSelf.outputStream?.streamStatus == .open,
+                -strongSelf.lastServerResponse.timeIntervalSinceNow < Double(strongSelf.options.keepAliveInterval) * 1.5  else {
                 self?.state = .disconnected
                 self?.autoReconnect()
                 return
@@ -160,7 +161,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
 
     // MARK: - Socket connection
 
-    private func openStreams(completion: @escaping (((input: InputStream, output: OutputStream)?) -> ())) {
+    private func openStreams(completion: @escaping (((input: InputStream, output: OutputStream)?) -> Void)) {
         var inputStream: InputStream?
         var outputStream: OutputStream?
 
@@ -312,7 +313,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
                 packet.topic = String(bytesNoCopy: messageBuffer, length: topicLength, encoding: .utf8, freeWhenDone: false)
             }
 
-            if packet.type.rawValue + packet.qos.rawValue >= (MQTTPacket.Header.publish + MQTTQoSLevel.QoS1.rawValue) && packet.type.rawValue <= MQTTPacket.Header.unsuback {
+            if packet.type.rawValue + packet.qos.rawValue >= (MQTTPacket.Header.publish + MQTTQoSLevel.qos1.rawValue) && packet.type.rawValue <= MQTTPacket.Header.unsuback {
 
                 let count = input.read(messageBuffer, maxLength: 2)
                 if count == 0 {
@@ -374,10 +375,10 @@ final public class MQTTSession: NSObject, StreamDelegate {
             var duplicate = false
             if let id = packet.identifier {
                 switch packet.qos {
-                case .QoS1:
+                case .qos1:
                     mqttPuback(id: id)
                     pendingPackets.removeValue(forKey: id)
-                case .QoS2:
+                case .qos2:
                     if let pending = pendingPackets[id], pending.type == .pubrec {
                         duplicate = true
                     }
@@ -512,7 +513,7 @@ final public class MQTTSession: NSObject, StreamDelegate {
 
         var packet = MQTTPacket(header: message.header)
         packet.variableHeader += message.topic
-        if message.qos > .QoS0 {
+        if message.qos > .qos0 {
             let id = nextMessageId()
             packet.identifier = id
             packet.variableHeader += id

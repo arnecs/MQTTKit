@@ -80,7 +80,7 @@ internal extension MQTTPacket {
     
     var qos: MQTTQoSLevel {
         get {
-            return MQTTQoSLevel(rawValue: header & MQTTPacket.Publish.qos) ?? .QoS0
+            return MQTTQoSLevel(rawValue: header & MQTTPacket.Publish.qos) ?? .qos0
         }
         set {
             header &= ~MQTTPacket.Publish.qos

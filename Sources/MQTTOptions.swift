@@ -24,9 +24,7 @@ public struct MQTTOptions {
     var password: String? = nil
     var username: String? = nil
     var keepAliveInterval: UInt16 = 10
-
     var clientId: String = UUID().uuidString
-    
     var useTLS = false
     var autoReconnect: Bool = true
     var autoReconnectTimeout: Double = 60

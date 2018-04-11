@@ -28,7 +28,7 @@ internal extension UInt16 {
     init(msb: UInt8, lsb: UInt8) {
         self = UInt16(msb) << 8 + lsb
     }
-    
+
     static func + (lhs: UInt16, rhs: UInt8) -> UInt16 {
         return lhs + UInt16(rhs)
     }
@@ -37,14 +37,11 @@ internal extension UInt16 {
 // MARK: - Public Static
 public struct MQTTKit {
     static public func match(filter: String, with topic: String) -> Bool {
-        
         let filterComponents = filter.components(separatedBy: "/")
         let topicComponents = topic.components(separatedBy: "/")
-        
         guard filterComponents.count <= topicComponents.count else {
             return false
         }
-        
         
         for i in 0..<filterComponents.count {
             let filterLevel = filterComponents[i], topicLevel = topicComponents[i]
