@@ -58,12 +58,13 @@ import MQTTKit
 
 let mqtt = MQTTClient(host: "localhost")
 
-mqtt.didConnect = {mqtt, connected in
-  // Gets called when a connack.accepted is recieved
+mqtt.didConnect = { connected in
+    guard connected else { return }
+    // Gets called when a connack.accepted is recieved
 }
 // Or
-mqtt.didRecieveConnack = {mqtt, response in
-  // Gets callen when connack is recieved
+mqtt.didRecieveConnack = { status in
+    // Gets callen when connack is recieved
 }
 
 mqtt.connect()
@@ -72,11 +73,11 @@ mqtt.connect()
 Subscribe and unsubscribe to topics
 ```Swift
 mqtt.didSubscribe = {mqtt, topic in
-  // Gets called when suback is recieved
+    // Gets called when suback is recieved
 }
 
 mqtt.didUnsubscribe  = {mqtt, topic in
-  // Gets called when unsuback is recieved
+    // Gets called when unsuback is recieved
 }
 
 mqtt.subscribe(to: "/my/topic")
@@ -90,8 +91,10 @@ Publish and recieved messages
 let messagePayload = "Some interesting content".data(using: .utf8)!
 mqtt.publish(to: "/my/topic", payload: messagePayload, qos: .QoS0, retained: false)
 
-mqtt.didRecieveMessage = {mqtt, message in
-  print(message)
+mqtt.didRecieveMessage = { message in
+    // message -> MQTTMessage(topic: "/my/topic", payload: x bytes, qos: MQTTKit.MQTTQoSLevel.QoS0, retained: false)
+    // message.string -> Optional("Some interesting content")
+    print(message.string)
 }
 
 ```
