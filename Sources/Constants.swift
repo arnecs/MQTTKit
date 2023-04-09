@@ -42,7 +42,7 @@ public enum MQTTQoSLevel: UInt8, Comparable {
 }
 
 public extension MQTTQoSLevel {
-    public static func < (lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
+    static func < (lhs: MQTTQoSLevel, rhs: MQTTQoSLevel) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
 }
