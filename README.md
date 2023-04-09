@@ -3,7 +3,7 @@
 MQTT Client written in Swift
 
 ![Travis](https://img.shields.io/travis/arnecs/MQTTKit.svg)
-[![Swift Version](https://img.shields.io/badge/Swift-4.0-F16D39.svg?style=flat)](https://developer.apple.com/swift)
+[![Swift Version](https://img.shields.io/badge/Swift-5.8-F16D39.svg?style=flat)](https://developer.apple.com/swift)
 ![license](https://img.shields.io/github/license/arnecs/MQTTKit.svg)
 
 ## Getting Started
