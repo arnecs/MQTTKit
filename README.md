@@ -72,11 +72,11 @@ mqtt.connect()
 
 Subscribe and unsubscribe to topics
 ```Swift
-mqtt.didSubscribe = {mqtt, topic in
+mqtt.didSubscribe = { topics in
     // Gets called when suback is recieved
 }
 
-mqtt.didUnsubscribe  = {mqtt, topic in
+mqtt.didUnsubscribe  = { topics in
     // Gets called when unsuback is recieved
 }
 
