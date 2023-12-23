@@ -59,9 +59,10 @@ internal struct MQTTPacket {
         self.header = header
     }
     
-    init(header: MQTTPacket.Header) {
-        self.init(header: header)
-    }
+    // ⚠️ Function call causes an infinite recursion
+//    init(header: MQTTPacket.Header) {
+//        self.init(header: header)
+//    }
 }
 
 // MARK: - Publish Packet

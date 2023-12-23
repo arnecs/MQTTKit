@@ -3,7 +3,7 @@
 MQTT Client written in Swift
 
 ![Travis](https://img.shields.io/travis/arnecs/MQTTKit.svg)
-[![Swift Version](https://img.shields.io/badge/Swift-4.0-F16D39.svg?style=flat)](https://developer.apple.com/swift)
+[![Swift Version](https://img.shields.io/badge/Swift-5.8-F16D39.svg?style=flat)](https://developer.apple.com/swift)
 ![license](https://img.shields.io/github/license/arnecs/MQTTKit.svg)
 
 ## Getting Started
@@ -58,12 +58,13 @@ import MQTTKit
 
 let mqtt = MQTTClient(host: "localhost")
 
-mqtt.didConnect = {mqtt, connected in
-  // Gets called when a connack.accepted is recieved
+mqtt.didConnect = { connected in
+    guard connected else { return }
+    // Gets called when a connack.accepted is recieved
 }
 // Or
-mqtt.didRecieveConnack = {mqtt, response in
-  // Gets callen when connack is recieved
+mqtt.didRecieveConnack = { status in
+    // Gets callen when connack is recieved
 }
 
 mqtt.connect()
@@ -71,12 +72,12 @@ mqtt.connect()
 
 Subscribe and unsubscribe to topics
 ```Swift
-mqtt.didSubscribe = {mqtt, topic in
-  // Gets called when suback is recieved
+mqtt.didSubscribe = { topics in
+    // Gets called when suback is recieved
 }
 
-mqtt.didUnsubscribe  = {mqtt, topic in
-  // Gets called when unsuback is recieved
+mqtt.didUnsubscribe  = { topics in
+    // Gets called when unsuback is recieved
 }
 
 mqtt.subscribe(to: "/my/topic")
@@ -90,8 +91,10 @@ Publish and recieved messages
 let messagePayload = "Some interesting content".data(using: .utf8)!
 mqtt.publish(to: "/my/topic", payload: messagePayload, qos: .QoS0, retained: false)
 
-mqtt.didRecieveMessage = {mqtt, message in
-  print(message)
+mqtt.didRecieveMessage = { message in
+    // message -> MQTTMessage(topic: "/my/topic", payload: x bytes, qos: MQTTKit.MQTTQoSLevel.QoS0, retained: false)
+    // message.string -> Optional("Some interesting content")
+    print(message.string)
 }
 
 ```
